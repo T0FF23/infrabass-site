@@ -56,14 +56,14 @@ const VinylSkateShop = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [vinylBannerImage, setVinylBannerImage] = useState(() => localStorage.getItem('vinylBannerImage') || '');
-  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState(() => localStorage.getItem('vinylBannerImageYellow') || '');
-  const [vinylButtonImage, setVinylButtonImage] = useState(() => localStorage.getItem('vinylButtonImage') || '');
-  const [vinylButtonImageYellow, setVinylButtonImageYellow] = useState(() => localStorage.getItem('vinylButtonImageYellow') || '');
-  const [skateboardBannerImage, setSkateboardBannerImage] = useState(() => localStorage.getItem('skateboardBannerImage') || '');
-  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState(() => localStorage.getItem('skateboardBannerImageYellow') || '');
-  const [skateboardButtonImage, setSkateboardButtonImage] = useState(() => localStorage.getItem('skateboardButtonImage') || '');
-  const [skateboardButtonImageYellow, setSkateboardButtonImageYellow] = useState(() => localStorage.getItem('skateboardButtonImageYellow') || '');
+  const [vinylBannerImage, setVinylBannerImage] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS.png');
+  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_jaune.png');
+  const [vinylButtonImage, setVinylButtonImage] = useState('/infrabass-site/images/Tete_infrabass.png');
+  const [vinylButtonImageYellow, setVinylButtonImageYellow] = useState('/infrabass-site/images/Tete_infrabass_survol-clic.png');
+  const [skateboardBannerImage, setSkateboardBannerImage] = useState('/infrabass-site/images/Bandeau_infraSK8.png');
+  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraSK8_SURVOL.png');
+  const [skateboardButtonImage, setSkateboardButtonImage] = useState('/infrabass-site/images/Tete_elephant.png');
+  const [skateboardButtonImageYellow, setSkateboardButtonImageYellow] = useState('/infrabass-site/images/Tete_elephant_SURVOL.png');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [productName, setProductName] = useState('');
@@ -83,19 +83,126 @@ const VinylSkateShop = () => {
     cardExpiry: '',
     cardCVV: ''
   });
-  const [products, setProducts] = useState(() => {
-    // Charger les produits depuis localStorage ou tableau vide
-    const savedProducts = localStorage.getItem('infrabass_products');
-    if (savedProducts) {
-      return JSON.parse(savedProducts);
-    }
-    return { vinyls: [] };
+  const [products, setProducts] = useState({
+    vinyls: [
+      {
+        id: 1,
+        name: "Daft Punk - Random Access Memories",
+        price: 35.99,
+        stock: 25,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Columbia",
+        format: "2xLP",
+        country: "France",
+        released: "2013",
+        style: "Disco, Synth-pop",
+        audioUrl: "",
+        audioUrl2: ""
+      },
+      {
+        id: 2,
+        name: "Aphex Twin - Selected Ambient Works 85-92",
+        price: 29.99,
+        stock: 15,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Apollo",
+        format: "2xLP",
+        country: "UK",
+        released: "1992",
+        style: "Ambient, IDM",
+        audioUrl: "",
+        audioUrl2: ""
+      },
+      {
+        id: 3,
+        name: "Burial - Untrue",
+        price: 27.50,
+        stock: 8,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Hyperdub",
+        format: "2xLP",
+        country: "UK",
+        released: "2007",
+        style: "Dubstep, UK Garage",
+        audioUrl: "",
+        audioUrl2: ""
+      },
+      {
+        id: 4,
+        name: "Kraftwerk - Trans-Europe Express",
+        price: 32.00,
+        stock: 12,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Kling Klang",
+        format: "LP",
+        country: "Germany",
+        released: "1977",
+        style: "Electro, Synth-pop",
+        audioUrl: "",
+        audioUrl2: ""
+      },
+      {
+        id: 5,
+        name: "Boards of Canada - Music Has the Right to Children",
+        price: 31.00,
+        stock: 0,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Warp",
+        format: "2xLP",
+        country: "UK",
+        released: "1998",
+        style: "IDM, Ambient",
+        audioUrl: "",
+        audioUrl2: ""
+      },
+      {
+        id: 6,
+        name: "Massive Attack - Mezzanine",
+        price: 28.99,
+        stock: 18,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: null,
+        image2: null,
+        genre: "Electronic",
+        label: "Virgin",
+        format: "2xLP",
+        country: "UK",
+        released: "1998",
+        style: "Trip Hop, Downtempo",
+        audioUrl: "",
+        audioUrl2: ""
+      }
+    ]
   });
 
-  // Sauvegarder les produits dans localStorage à chaque modification
-  React.useEffect(() => {
-    localStorage.setItem('infrabass_products', JSON.stringify(products));
-  }, [products]);
+  // Products managed in memory
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [isProductValidated, setIsProductValidated] = useState(false);
@@ -2031,6 +2138,7 @@ const VinylSkateShop = () => {
     );
   };
 
+
   const HomePage = () => (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
@@ -2043,266 +2151,144 @@ const VinylSkateShop = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8 mb-16">
+        {/* Bandeau Vinyls */}
         <div 
           className="group relative overflow-hidden rounded-2xl h-[280px] bg-gradient-to-br from-gray-900 to-black"
-          style={{ width: '800px', marginLeft: 'auto', marginRight: 'auto' }}
+          style={{ width: '800px', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto' }}
         >
           {/* Image de fond blanche (normale) */}
-          {vinylBannerImage && (
-            <img 
-              src={vinylBannerImage} 
-              alt="Vinyls background" 
-              className="banner-white absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-              style={{
-                mixBlendMode: 'screen',
-                opacity: 1
-              }}
-            />
-          )}
-          {/* Image de fond jaune (survol du bouton) */}
-          {vinylBannerImageYellow && (
-            <img 
-              src={vinylBannerImageYellow} 
-              alt="Vinyls background yellow" 
-              className="banner-yellow absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-              style={{
-                mixBlendMode: 'screen',
-                opacity: 0
-              }}
-            />
-          )}
+          <img 
+            src={vinylBannerImage} 
+            alt="Vinyls background" 
+            className="vinyl-banner-white absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            style={{ mixBlendMode: 'screen', opacity: 1 }}
+          />
+          {/* Image de fond jaune (survol) */}
+          <img 
+            src={vinylBannerImageYellow} 
+            alt="Vinyls background yellow" 
+            className="vinyl-banner-yellow absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            style={{ mixBlendMode: 'screen', opacity: 0 }}
+          />
           
-          {/* Image du bouton centré (modifiable uniquement depuis Admin) */}
+          {/* Bouton central */}
           <div className="relative flex items-center justify-center h-full">
-            {vinylButtonImage ? (
-              <div 
-                onClick={() => setCurrentPage('vinyl')}
-                className="w-48 h-48 flex items-center justify-center cursor-pointer relative"
-                onMouseEnter={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version');
-                  const whiteImg = e.currentTarget.querySelector('.white-version');
-                  const bannerYellow = document.querySelector('.banner-yellow');
-                  const bannerWhite = document.querySelector('.banner-white');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.opacity = '1';
-                    yellowImg.style.transform = 'scale(0.9)';
-                    whiteImg.style.opacity = '0';
-                    whiteImg.style.transform = 'scale(0.9)';
-                  }
-                  if (bannerYellow && bannerWhite) {
-                    bannerYellow.style.opacity = '1';
-                    bannerWhite.style.opacity = '0';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version');
-                  const whiteImg = e.currentTarget.querySelector('.white-version');
-                  const bannerYellow = document.querySelector('.banner-yellow');
-                  const bannerWhite = document.querySelector('.banner-white');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.opacity = '0';
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.opacity = '1';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                  if (bannerYellow && bannerWhite) {
-                    bannerYellow.style.opacity = '0';
-                    bannerWhite.style.opacity = '1';
-                  }
-                }}
-                onMouseDown={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version');
-                  const whiteImg = e.currentTarget.querySelector('.white-version');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                }}
-              >
-                    whiteImg.style.opacity = '0';
-                    whiteImg.style.transform = 'scale(0.9)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version');
-                  const whiteImg = e.currentTarget.querySelector('.white-version');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.opacity = '0';
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.opacity = '1';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                }}
-                onMouseDown={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version');
-                  const whiteImg = e.currentTarget.querySelector('.white-version');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                }}
-              >
-                {/* Image blanche (normale) */}
-                {vinylButtonImage && (
-                  <img 
-                    src={vinylButtonImage} 
-                    alt="Vinyl button" 
-                    className="white-version w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                    style={{
-                      mixBlendMode: 'screen',
-                      opacity: 1
-                    }}
-                  />
-                )}
-                {/* Image jaune (survol/clic) */}
-                {vinylButtonImageYellow && (
-                  <img 
-                    src={vinylButtonImageYellow} 
-                    alt="Vinyl button yellow" 
-                    className="yellow-version w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                    style={{
-                      mixBlendMode: 'screen',
-                      opacity: 0,
-                      transform: 'scale(1)'
-                    }}
-                  />
-                )}
-                {!vinylButtonImage && !vinylButtonImageYellow && (
-                  <div className="text-center p-6">
-                    <p className="text-white font-bold text-xl">Image non configurée</p>
-                    <p className="text-gray-400 text-sm mt-2">Configurez les images depuis la page Administration</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center p-6">
-                <p className="text-white font-bold text-xl">Image non configurée</p>
-                <p className="text-gray-400 text-sm mt-2">Configurez l'image depuis la page Administration</p>
-              </div>
-            )}
+            <div 
+              onClick={() => setCurrentPage('vinyl')}
+              className="w-48 h-48 flex items-center justify-center cursor-pointer relative"
+              onMouseEnter={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
+                const bannerYellow = document.querySelector('.vinyl-banner-yellow');
+                const bannerWhite = document.querySelector('.vinyl-banner-white');
+                if (yellowBtn) { yellowBtn.style.opacity = '1'; yellowBtn.style.transform = 'scale(0.9)'; }
+                if (whiteBtn) { whiteBtn.style.opacity = '0'; whiteBtn.style.transform = 'scale(0.9)'; }
+                if (bannerYellow) bannerYellow.style.opacity = '1';
+                if (bannerWhite) bannerWhite.style.opacity = '0';
+              }}
+              onMouseLeave={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
+                const bannerYellow = document.querySelector('.vinyl-banner-yellow');
+                const bannerWhite = document.querySelector('.vinyl-banner-white');
+                if (yellowBtn) { yellowBtn.style.opacity = '0'; yellowBtn.style.transform = 'scale(1)'; }
+                if (whiteBtn) { whiteBtn.style.opacity = '1'; whiteBtn.style.transform = 'scale(1)'; }
+                if (bannerYellow) bannerYellow.style.opacity = '0';
+                if (bannerWhite) bannerWhite.style.opacity = '1';
+              }}
+              onMouseDown={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
+                if (yellowBtn) yellowBtn.style.transform = 'scale(1)';
+                if (whiteBtn) whiteBtn.style.transform = 'scale(1)';
+              }}
+            >
+              <img 
+                src={vinylButtonImage} 
+                alt="Vinyl button" 
+                className="vinyl-btn-white w-full h-full object-contain transition-all duration-300 absolute inset-0"
+                style={{ mixBlendMode: 'screen', opacity: 1 }}
+              />
+              <img 
+                src={vinylButtonImageYellow} 
+                alt="Vinyl button yellow" 
+                className="vinyl-btn-yellow w-full h-full object-contain transition-all duration-300 absolute inset-0"
+                style={{ mixBlendMode: 'screen', opacity: 0, transform: 'scale(1)' }}
+              />
+            </div>
           </div>
         </div>
 
+        {/* Bandeau Skateboards */}
         <div 
           className="group relative overflow-hidden rounded-2xl h-[240px] bg-gradient-to-br from-gray-900 to-black"
-          style={{ width: '800px', marginLeft: 'auto', marginRight: 'auto' }}
+          style={{ width: '800px', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto' }}
         >
           {/* Image de fond blanche (normale) */}
-          {skateboardBannerImage && (
-            <img 
-              src={skateboardBannerImage} 
-              alt="Skateboards background" 
-              className="banner-white-sk absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-              style={{
-                mixBlendMode: 'screen',
-                opacity: 1
-              }}
-            />
-          )}
-          {/* Image de fond jaune (survol du bouton) */}
-          {skateboardBannerImageYellow && (
-            <img 
-              src={skateboardBannerImageYellow} 
-              alt="Skateboards background yellow" 
-              className="banner-yellow-sk absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-              style={{
-                mixBlendMode: 'screen',
-                opacity: 0
-              }}
-            />
-          )}
+          <img 
+            src={skateboardBannerImage} 
+            alt="Skateboards background" 
+            className="sk8-banner-white absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            style={{ mixBlendMode: 'screen', opacity: 1 }}
+          />
+          {/* Image de fond jaune (survol) */}
+          <img 
+            src={skateboardBannerImageYellow} 
+            alt="Skateboards background yellow" 
+            className="sk8-banner-yellow absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            style={{ mixBlendMode: 'screen', opacity: 0 }}
+          />
           
-          {/* Image du bouton centré (modifiable uniquement depuis Admin) */}
+          {/* Bouton central */}
           <div className="relative flex items-center justify-center h-full">
-            {skateboardButtonImage ? (
-              <div 
-                onClick={() => window.open('https://infrask8.webflow.io/', '_blank')}
-                className="w-64 h-64 flex items-center justify-center cursor-pointer relative"
-                onMouseEnter={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version-sk');
-                  const whiteImg = e.currentTarget.querySelector('.white-version-sk');
-                  const bannerYellow = document.querySelector('.banner-yellow-sk');
-                  const bannerWhite = document.querySelector('.banner-white-sk');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.opacity = '1';
-                    yellowImg.style.transform = 'scale(0.9)';
-                    whiteImg.style.opacity = '0';
-                    whiteImg.style.transform = 'scale(0.9)';
-                  }
-                  if (bannerYellow && bannerWhite) {
-                    bannerYellow.style.opacity = '1';
-                    bannerWhite.style.opacity = '0';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version-sk');
-                  const whiteImg = e.currentTarget.querySelector('.white-version-sk');
-                  const bannerYellow = document.querySelector('.banner-yellow-sk');
-                  const bannerWhite = document.querySelector('.banner-white-sk');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.opacity = '0';
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.opacity = '1';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                  if (bannerYellow && bannerWhite) {
-                    bannerYellow.style.opacity = '0';
-                    bannerWhite.style.opacity = '1';
-                  }
-                }}
-                onMouseDown={(e) => {
-                  const yellowImg = e.currentTarget.querySelector('.yellow-version-sk');
-                  const whiteImg = e.currentTarget.querySelector('.white-version-sk');
-                  if (yellowImg && whiteImg) {
-                    yellowImg.style.transform = 'scale(1)';
-                    whiteImg.style.transform = 'scale(1)';
-                  }
-                }}
-              >
-                {/* Image blanche (normale) */}
-                {skateboardButtonImage && (
-                  <img 
-                    src={skateboardButtonImage} 
-                    alt="Skateboard button" 
-                    className="white-version-sk w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                    style={{
-                      mixBlendMode: 'screen',
-                      opacity: 1
-                    }}
-                  />
-                )}
-                {/* Image jaune (survol/clic) */}
-                {skateboardButtonImageYellow && (
-                  <img 
-                    src={skateboardButtonImageYellow} 
-                    alt="Skateboard button yellow" 
-                    className="yellow-version-sk w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                    style={{
-                      mixBlendMode: 'screen',
-                      opacity: 0,
-                      transform: 'scale(1)'
-                    }}
-                  />
-                )}
-                {!skateboardButtonImage && !skateboardButtonImageYellow && (
-                  <div className="text-center p-6">
-                    <p className="text-white font-bold text-xl">Image non configurée</p>
-                    <p className="text-gray-400 text-sm mt-2">Configurez les images depuis la page Administration</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center p-6">
-                <p className="text-white font-bold text-xl">Image non configurée</p>
-                <p className="text-gray-400 text-sm mt-2">Configurez l'image depuis la page Administration</p>
-              </div>
-            )}
+            <div 
+              onClick={() => window.open('https://infrask8.webflow.io/', '_blank')}
+              className="w-64 h-64 flex items-center justify-center cursor-pointer relative"
+              onMouseEnter={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
+                const bannerYellow = document.querySelector('.sk8-banner-yellow');
+                const bannerWhite = document.querySelector('.sk8-banner-white');
+                if (yellowBtn) { yellowBtn.style.opacity = '1'; yellowBtn.style.transform = 'scale(0.9)'; }
+                if (whiteBtn) { whiteBtn.style.opacity = '0'; whiteBtn.style.transform = 'scale(0.9)'; }
+                if (bannerYellow) bannerYellow.style.opacity = '1';
+                if (bannerWhite) bannerWhite.style.opacity = '0';
+              }}
+              onMouseLeave={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
+                const bannerYellow = document.querySelector('.sk8-banner-yellow');
+                const bannerWhite = document.querySelector('.sk8-banner-white');
+                if (yellowBtn) { yellowBtn.style.opacity = '0'; yellowBtn.style.transform = 'scale(1)'; }
+                if (whiteBtn) { whiteBtn.style.opacity = '1'; whiteBtn.style.transform = 'scale(1)'; }
+                if (bannerYellow) bannerYellow.style.opacity = '0';
+                if (bannerWhite) bannerWhite.style.opacity = '1';
+              }}
+              onMouseDown={(e) => {
+                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
+                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
+                if (yellowBtn) yellowBtn.style.transform = 'scale(1)';
+                if (whiteBtn) whiteBtn.style.transform = 'scale(1)';
+              }}
+            >
+              <img 
+                src={skateboardButtonImage} 
+                alt="Skateboard button" 
+                className="sk8-btn-white w-full h-full object-contain transition-all duration-300 absolute inset-0"
+                style={{ mixBlendMode: 'screen', opacity: 1 }}
+              />
+              <img 
+                src={skateboardButtonImageYellow} 
+                alt="Skateboard button yellow" 
+                className="sk8-btn-yellow w-full h-full object-contain transition-all duration-300 absolute inset-0"
+                style={{ mixBlendMode: 'screen', opacity: 0, transform: 'scale(1)' }}
+              />
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-
   const VinylPage = () => (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
