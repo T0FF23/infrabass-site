@@ -14,9 +14,7 @@ npm install
 npm run dev
 ```
 
-Ouvre http://localhost:5173 dans ton navigateur.
-
-## Déployer sur GitHub Pages
+## Déploiement sur GitHub Pages
 
 ```bash
 npm run deploy
@@ -24,5 +22,5 @@ npm run deploy
 
 ## Identifiants Admin
 
-- Username: `admin`
-- Password: `admin123`
+- Username: admin
+- Password: admin123

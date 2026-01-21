@@ -56,14 +56,17 @@ const VinylSkateShop = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [vinylBannerImage, setVinylBannerImage] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_800x200.png');
-  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_jaune_800x200.png');
-  const [vinylButtonImage, setVinylButtonImage] = useState('/infrabass-site/images/Tete_infrabass.png');
-  const [vinylButtonImageYellow, setVinylButtonImageYellow] = useState('/infrabass-site/images/Tete_infrabass_survol-clic.png');
-  const [skateboardBannerImage, setSkateboardBannerImage] = useState('/infrabass-site/images/Bandeau_infraSK8_800x200.png');
-  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraSK8_SURVOL_800x200.png');
-  const [skateboardButtonImage, setSkateboardButtonImage] = useState('/infrabass-site/images/Tete_elephant.png');
-  const [skateboardButtonImageYellow, setSkateboardButtonImageYellow] = useState('/infrabass-site/images/Tete_elephant_SURVOL.png');
+  const [adminTab, setAdminTab] = useState('add_ref'); // Onglet actif: 'gfx_ui', 'add_ref', 'medias', 'edit_ref'
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true); // Pour le bouton de validation
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null); // Pour la confirmation de suppression
+  const [vinylBannerImage, setVinylBannerImage] = useState(() => localStorage.getItem('vinylBannerImage') || '/infrabass-site/images/Bandeau_infraBASS_VINYLS_800x200.png');
+  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState(() => localStorage.getItem('vinylBannerImageYellow') || '/infrabass-site/images/Bandeau_infraBASS_VINYLS_jaune_800x200.png');
+  const [vinylButtonImage, setVinylButtonImage] = useState(() => localStorage.getItem('vinylButtonImage') || '/infrabass-site/images/Tete_infrabass.png');
+  const [vinylButtonImageYellow, setVinylButtonImageYellow] = useState(() => localStorage.getItem('vinylButtonImageYellow') || '/infrabass-site/images/Tete_infrabass_survol-clic.png');
+  const [skateboardBannerImage, setSkateboardBannerImage] = useState(() => localStorage.getItem('skateboardBannerImage') || '/infrabass-site/images/Bandeau_infraSK8_800x200.png');
+  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState(() => localStorage.getItem('skateboardBannerImageYellow') || '/infrabass-site/images/Bandeau_infraSK8_SURVOL_800x200.png');
+  const [skateboardButtonImage, setSkateboardButtonImage] = useState(() => localStorage.getItem('skateboardButtonImage') || '/infrabass-site/images/Tete_elephant.png');
+  const [skateboardButtonImageYellow, setSkateboardButtonImageYellow] = useState(() => localStorage.getItem('skateboardButtonImageYellow') || '/infrabass-site/images/Tete_elephant_SURVOL.png');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [productName, setProductName] = useState('');
@@ -83,16 +86,87 @@ const VinylSkateShop = () => {
     cardExpiry: '',
     cardCVV: ''
   });
+  
+  // Références par défaut
+  const defaultProducts = {
+    vinyls: [
+      {
+        id: 1,
+        name: 'IB 2K23 Opus 1',
+        price: 25.00,
+        stock: 50,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: '/infrabass-site/images/2k23op1_B.png',
+        image2: null,
+        genre: 'Electronic',
+        audioUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        audioUrl2: '',
+        label: 'INFRABASS',
+        format: '12"',
+        country: 'France',
+        released: '2023',
+        style: 'Bass Music',
+        type: 'IB-2K23-OP1'
+      },
+      {
+        id: 2,
+        name: 'IB 2K23 Opus 2',
+        price: 25.00,
+        stock: 50,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: '/infrabass-site/images/2k23op2_B.png',
+        image2: null,
+        genre: 'Electronic',
+        audioUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        audioUrl2: '',
+        label: 'INFRABASS',
+        format: '12"',
+        country: 'France',
+        released: '2023',
+        style: 'Bass Music',
+        type: 'IB-2K23-OP2'
+      },
+      {
+        id: 3,
+        name: 'IB 2K23 Opus 3',
+        price: 25.00,
+        stock: 50,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: '/infrabass-site/images/2k23op3_B.png',
+        image2: null,
+        genre: 'Electronic',
+        audioUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        audioUrl2: '',
+        label: 'INFRABASS',
+        format: '12"',
+        country: 'France',
+        released: '2023',
+        style: 'Bass Music',
+        type: 'IB-2K23-OP3'
+      }
+    ]
+  };
+  
   const [products, setProducts] = useState(() => {
-    // Charger les produits depuis localStorage ou tableau vide
+    // Charger les références depuis localStorage ou utiliser les références par défaut
     const savedProducts = localStorage.getItem('infrabass_products');
     if (savedProducts) {
-      return JSON.parse(savedProducts);
+      const parsed = JSON.parse(savedProducts);
+      // Si le localStorage contient des vinyls, les utiliser, sinon utiliser les defaults
+      if (parsed.vinyls && parsed.vinyls.length > 0) {
+        return parsed;
+      }
     }
-    return { vinyls: [] };
+    return defaultProducts;
   });
 
-  // Sauvegarder les produits dans localStorage à chaque modification
+  // Sauvegarder les références dans localStorage à chaque modification
   React.useEffect(() => {
     localStorage.setItem('infrabass_products', JSON.stringify(products));
   }, [products]);
@@ -242,7 +316,7 @@ const VinylSkateShop = () => {
       ...products,
       vinyls: products.vinyls.filter(p => p.id !== id)
     });
-    console.log('ℹ️', 'Produit supprimé avec succès !');
+    console.log('ℹ️', 'Référence supprimée avec succès !');
   };
 
   const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -496,11 +570,14 @@ const VinylSkateShop = () => {
         vinyls: newVinyls
       });
       
+      // Marquer qu'il y a des modifications non sauvegardées
+      setHasUnsavedChanges(true);
+      
       // Réinitialiser le bouton Valider après suppression
       setIsProductValidated(false);
       setIsProductAdded(true);
       
-      console.log('ℹ️', 'Produit supprimé avec succès !');
+      console.log('ℹ️', 'Référence supprimée avec succès !');
     };
 
     const handleImageUpload = (e, imageNumber) => {
@@ -522,7 +599,7 @@ const VinylSkateShop = () => {
 
     const handleAddProduct = () => {
       if (!localName || !localPrice || !localStock) {
-        alert('Veuillez remplir tous les champs obligatoires (Nom, Prix, Stock)');
+        alert('Veuillez remplir tous les champs obligatoires (Titre, Prix, Stock)');
         return;
       }
 
@@ -551,7 +628,10 @@ const VinylSkateShop = () => {
         vinyls: [...products.vinyls, productToAdd]
       });
 
-      console.log('ℹ️', 'Produit ajouté avec succès !');
+      console.log('ℹ️', 'Référence ajoutée avec succès !');
+      
+      // Marquer qu'il y a des modifications non sauvegardées
+      setHasUnsavedChanges(true);
 
       // Activer l'état d'ajout et réinitialiser la validation
       setIsProductAdded(true);
@@ -593,14 +673,79 @@ const VinylSkateShop = () => {
     return (
       <div className="min-h-screen pb-20">
         <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-8">
+          {/* En-tête avec titre et bouton de validation */}
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-4xl font-bold text-white">Administration</h2>
-            <div className="flex gap-4 items-center">
-            </div>
+            <button
+              onClick={() => {
+                localStorage.setItem('infrabass_products', JSON.stringify(products));
+                setHasUnsavedChanges(false);
+                alert('✅ Toutes les modifications ont été sauvegardées !');
+              }}
+              className={`px-6 py-3 font-bold rounded-lg transition ${
+                hasUnsavedChanges 
+                  ? 'bg-red-600 hover:bg-red-700 active:bg-red-800 text-white' 
+                  : 'bg-green-600 hover:bg-green-700 active:bg-green-800 text-white'
+              }`}
+            >
+              {hasUnsavedChanges ? 'Valider toutes les modifications' : '✓ Modifications enregistrées'}
+            </button>
           </div>
 
-          {/* Contenu de l'admin */}
-        <>
+          {/* Barre d'onglets */}
+          <div className="flex justify-between mb-8 border-b border-gray-700 pb-2">
+            {/* Onglets principaux à gauche */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAdminTab('add_ref')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'add_ref' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Ajouter une référence
+              </button>
+              <button
+                onClick={() => setAdminTab('medias')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'medias' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Médias
+              </button>
+              <button
+                onClick={() => setAdminTab('edit_ref')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'edit_ref' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Modifier une référence
+              </button>
+            </div>
+            
+            {/* Onglet GFX_UI isolé à droite */}
+            <button
+              onClick={() => setAdminTab('gfx_ui')}
+              className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                adminTab === 'gfx_ui' 
+                  ? 'bg-yellow-500 text-black' 
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              GFX_UI
+            </button>
+          </div>
+
+          {/* Contenu de l'admin selon l'onglet actif */}
+          
+          {/* ONGLET GFX_UI */}
+          {adminTab === 'gfx_ui' && (
+            <>
         {/* Section Images de fond Bandeau Vinyls - Blanc et Jaune côte à côte */}
         <div className="grid grid-cols-2 gap-6 mb-8">
           {/* Image de fond blanche */}
@@ -1028,26 +1173,31 @@ const VinylSkateShop = () => {
             </div>
           </div>
         </div>
+            </>
+          )}
 
+          {/* ONGLET AJOUTER UNE RÉFÉRENCE */}
+          {adminTab === 'add_ref' && (
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6 mb-8">
-          <h3 className="text-2xl font-bold text-white mb-4">Ajouter un produit</h3>
+          <h3 className="text-2xl font-bold text-white mb-4">Ajouter une référence</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-gray-300 text-sm mb-2">Type de support</label>
-              <select
-                value={localCategory}
+              <label className="block text-gray-300 text-sm mb-2">Référence *</label>
+              <input
+                type="text"
+                value={localType}
                 onChange={(e) => {
-                  setLocalCategory(e.target.value);
-                  localStorage.setItem('productCategory', e.target.value);
+                  setLocalType(e.target.value);
+                  localStorage.setItem('productType', e.target.value);
+                  setHasUnsavedChanges(true);
                 }}
                 className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-              >
-                <option value="vinyl">Vinyl</option>
-                <option value="digital">Digital</option>
-              </select>
+                placeholder="Référence"
+                required
+              />
             </div>
             <div>
-              <label className="block text-gray-300 text-sm mb-2">Nom *</label>
+              <label className="block text-gray-300 text-sm mb-2">Titre *</label>
               <input
                 type="text"
                 value={localName}
@@ -1056,7 +1206,7 @@ const VinylSkateShop = () => {
                   localStorage.setItem('productName', e.target.value);
                 }}
                 className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                placeholder="Nom du produit"
+                placeholder="Titre de la référence"
               />
             </div>
             {(localCategory === 'vinyl' || localCategory === 'digital') && (
@@ -1153,7 +1303,7 @@ const VinylSkateShop = () => {
                     : 'bg-red-500 hover:bg-red-600 text-white'
                 }`}
               >
-                {isProductAdded ? '✓ Produit ajouté' : 'Ajouter le produit'}
+                {isProductAdded ? '✓ Référence ajoutée' : 'Ajouter la référence'}
               </button>
               <button
                 onClick={() => {
@@ -1180,51 +1330,46 @@ const VinylSkateShop = () => {
             </div>
           </div>
         </div>
+          )}
 
-        {/* Nouveau bandeau Médias */}
+          {/* ONGLET MÉDIAS */}
+          {adminTab === 'medias' && (
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6 mb-8">
           <h3 className="text-2xl font-bold text-white mb-4">Médias</h3>
           <div className="grid grid-cols-2 gap-4">
-            {/* Colonne 1 */}
+            {/* Colonne 1 - URL Audio */}
             <div className="space-y-4">
               <div>
-                <label className="block text-gray-300 text-sm mb-2">URL Audio Face A</label>
+                <label className="block text-gray-300 text-sm mb-2">URL Audio</label>
                 <input
                   type="text"
                   value={localAudioUrl}
                   onChange={(e) => {
                     setLocalAudioUrl(e.target.value);
                     localStorage.setItem('productAudioUrl', e.target.value);
+                    setHasUnsavedChanges(true);
                   }}
                   className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      // Le champ input au-dessus permet déjà d'importer l'URL
-                      console.log('ℹ️', 'Utilisez le champ ci-dessus pour coller votre URL YouTube');
-                    }}
-                    className="flex-1 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold rounded-lg transition"
-                  >
-                    Importer
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLocalAudioUrl('');
-                      localStorage.removeItem('productAudioUrl');
-                    }}
-                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                  >
-                    Supprimer
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setLocalAudioUrl('');
+                    localStorage.removeItem('productAudioUrl');
+                  }}
+                  className="w-full py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
+                >
+                  Supprimer
+                </button>
               </div>
+            </div>
+            {/* Colonne 2 - Photo */}
+            <div className="space-y-4">
               <div>
-                <label className="block text-gray-300 text-sm mb-2">Photo 1</label>
+                <label className="block text-gray-300 text-sm mb-2">Photo</label>
                 {localImage1 && (
                   <div className="mb-2">
-                    <img src={localImage1} alt="Preview 1" className="w-full h-32 object-cover rounded-lg" />
+                    <img src={localImage1} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -1232,7 +1377,10 @@ const VinylSkateShop = () => {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 1)}
+                      onChange={(e) => {
+                        handleImageUpload(e, 1);
+                        setHasUnsavedChanges(true);
+                      }}
                       className="hidden"
                     />
                     <div className="w-full py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold text-center rounded-lg transition">
@@ -1243,73 +1391,7 @@ const VinylSkateShop = () => {
                     onClick={() => {
                       setLocalImage1('');
                       localStorage.removeItem('productImage1');
-                    }}
-                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Colonne 2 */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-300 text-sm mb-2">URL Audio Face B</label>
-                <input
-                  type="text"
-                  value={localAudioUrl2}
-                  onChange={(e) => {
-                    setLocalAudioUrl2(e.target.value);
-                    localStorage.setItem('productAudioUrl2', e.target.value);
-                  }}
-                  className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
-                  placeholder="https://www.youtube.com/watch?v=..."
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      // Le champ input au-dessus permet déjà d'importer l'URL
-                      console.log('ℹ️', 'Utilisez le champ ci-dessus pour coller votre URL YouTube');
-                    }}
-                    className="flex-1 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold rounded-lg transition"
-                  >
-                    Importer
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLocalAudioUrl2('');
-                      localStorage.removeItem('productAudioUrl2');
-                    }}
-                    className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-gray-300 text-sm mb-2">Photo 2</label>
-                {localImage2 && (
-                  <div className="mb-2">
-                    <img src={localImage2} alt="Preview 2" className="w-full h-32 object-cover rounded-lg" />
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <label className="flex-1 cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, 2)}
-                      className="hidden"
-                    />
-                    <div className="w-full py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold text-center rounded-lg transition">
-                      Importer
-                    </div>
-                  </label>
-                  <button
-                    onClick={() => {
-                      setLocalImage2('');
-                      localStorage.removeItem('productImage2');
+                      setHasUnsavedChanges(true);
                     }}
                     className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
                   >
@@ -1320,10 +1402,13 @@ const VinylSkateShop = () => {
             </div>
           </div>
         </div>
+          )}
 
+          {/* ONGLET MODIFIER UNE RÉFÉRENCE */}
+          {adminTab === 'edit_ref' && (
         <div className="space-y-6">
           <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
-            <h3 className="text-2xl font-bold text-white mb-4">Modifier un produit ({products.vinyls.length})</h3>
+            <h3 className="text-2xl font-bold text-white mb-4">Modifier une référence ({products.vinyls.length})</h3>
             <div className="space-y-3">
               {products.vinyls.map(product => (
                 <div key={product.id} className="bg-gray-800/50 rounded-lg p-4 flex items-center justify-between">
@@ -1338,22 +1423,46 @@ const VinylSkateShop = () => {
                     >
                       Modifier
                     </button>
+                    {deleteConfirmId === product.id ? (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleDeleteProduct(product.id, 'vinyl');
+                            setDeleteConfirmId(null);
+                            setHasUnsavedChanges(true);
+                          }}
+                          className="px-4 py-2 bg-red-800 hover:bg-red-900 text-white rounded-lg transition"
+                        >
+                          Confirmer
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition"
+                        >
+                          Annuler
+                        </button>
+                      </>
+                    ) : (
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteProduct(product.id, 'vinyl');
+                        setDeleteConfirmId(product.id);
                       }}
                       className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition"
                     >
                       Supprimer
                     </button>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+          )}
 
         {editingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1365,10 +1474,21 @@ const VinylSkateShop = () => {
             
             {/* Popup */}
             <div className="bg-neutral-950 border border-yellow-500 rounded-xl p-4 max-w-4xl w-full max-h-[85vh] overflow-y-auto relative z-10">
-              <h3 className="text-xl font-bold text-white mb-3">Modifier le produit</h3>
+              <h3 className="text-xl font-bold text-white mb-3">Modifier la référence</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-gray-300 text-sm mb-2">Nom *</label>
+                  <label className="block text-gray-300 text-sm mb-2">Référence *</label>
+                  <input
+                    type="text"
+                    value={editingProduct.type || ''}
+                    onChange={(e) => setEditingProduct({...editingProduct, type: e.target.value})}
+                    className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                    placeholder="Référence du produit"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-2">Titre *</label>
                   <input
                     type="text"
                     value={editLocalName}
@@ -1455,17 +1575,6 @@ const VinylSkateShop = () => {
                     </div>
                   </>
                 )}
-                {editingProduct.category === 'skateboard' && (
-                  <div>
-                    <label className="block text-gray-300 text-sm mb-2">Type</label>
-                    <input
-                      type="text"
-                      value={editingProduct.type || ''}
-                      onChange={(e) => setEditingProduct({...editingProduct, type: e.target.value})}
-                      className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
-                    />
-                  </div>
-                )}
                 <div>
                   <label className="block text-gray-300 text-sm mb-2">Prix (€) *</label>
                   <input
@@ -1497,10 +1606,10 @@ const VinylSkateShop = () => {
               <div className="mt-4">
                 <h4 className="text-lg font-bold text-white mb-3">Médias</h4>
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Colonne 1 */}
+                  {/* Colonne 1 - URL Audio */}
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-gray-300 text-sm mb-2">URL Audio Face A</label>
+                      <label className="block text-gray-300 text-sm mb-2">URL Audio</label>
                       <input
                         type="text"
                         value={editLocalAudioUrl}
@@ -1511,29 +1620,22 @@ const VinylSkateShop = () => {
                         className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
                         placeholder="https://www.youtube.com/watch?v=..."
                       />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            // Le champ input au-dessus permet déjà d'importer l'URL
-                            console.log('ℹ️', 'Utilisez le champ ci-dessus pour coller votre URL YouTube');
-                          }}
-                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold rounded-lg transition"
-                        >
-                          Importer
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditLocalAudioUrl('');
-                            localStorage.removeItem('editProductAudioUrl');
-                          }}
-                          className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setEditLocalAudioUrl('');
+                          localStorage.removeItem('editProductAudioUrl');
+                        }}
+                        className="w-full py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
+                      >
+                        Supprimer
+                      </button>
                     </div>
+                  </div>
+
+                  {/* Colonne 2 - Photo */}
+                  <div className="space-y-3">
                     <div>
-                      <label className="block text-gray-300 text-sm mb-2">Photo 1</label>
+                      <label className="block text-gray-300 text-sm mb-2">Photo</label>
                       {editLocalImage1 && (
                         <div className="mb-2">
                           <img src={editLocalImage1} alt="Preview 1" className="w-full h-32 object-cover rounded-lg" />
@@ -1565,83 +1667,6 @@ const VinylSkateShop = () => {
                           onClick={() => {
                             setEditLocalImage1('');
                             localStorage.removeItem('editProductImage1');
-                          }}
-                          className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Colonne 2 */}
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">URL Audio Face B</label>
-                      <input
-                        type="text"
-                        value={editLocalAudioUrl2}
-                        onChange={(e) => {
-                          setEditLocalAudioUrl2(e.target.value);
-                          localStorage.setItem('editProductAudioUrl2', e.target.value);
-                        }}
-                        className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
-                        placeholder="https://www.youtube.com/watch?v=..."
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            // Le champ input au-dessus permet déjà d'importer l'URL
-                            console.log('ℹ️', 'Utilisez le champ ci-dessus pour coller votre URL YouTube');
-                          }}
-                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold rounded-lg transition"
-                        >
-                          Importer
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditLocalAudioUrl2('');
-                            localStorage.removeItem('editProductAudioUrl2');
-                          }}
-                          className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                        >
-                          Supprimer
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-gray-300 text-sm mb-2">Photo 2</label>
-                      {editLocalImage2 && (
-                        <div className="mb-2">
-                          <img src={editLocalImage2} alt="Preview 2" className="w-full h-32 object-cover rounded-lg" />
-                        </div>
-                      )}
-                      <div className="flex gap-2">
-                        <label className="flex-1 cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onloadend = () => {
-                                  setEditLocalImage2(reader.result);
-                                  localStorage.setItem('editProductImage2', reader.result);
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                            }}
-                            className="hidden"
-                          />
-                          <div className="w-full py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-bold text-center rounded-lg transition">
-                            Importer
-                          </div>
-                        </label>
-                        <button
-                          onClick={() => {
-                            setEditLocalImage2('');
-                            localStorage.removeItem('editProductImage2');
                           }}
                           className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
                         >
@@ -1685,8 +1710,9 @@ const VinylSkateShop = () => {
                           vinyls: products.vinyls.map(p => p.id === editingProduct.id ? updatedProduct : p)
                         });
                       }
+                      setHasUnsavedChanges(true);
                       setEditingProduct(null);
-                      console.log('ℹ️', 'Produit modifié avec succès !');
+                      console.log('ℹ️', 'Référence modifiée avec succès !');
                     }}
                     className="flex-1 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition"
                   >
@@ -1695,8 +1721,6 @@ const VinylSkateShop = () => {
               </div>
             </div>
           </div>
-        )}
-        </>
         )}
         </div>
       </div>
@@ -1771,7 +1795,7 @@ const VinylSkateShop = () => {
                 }}
                 className="ml-auto px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition"
               >
-                Ajouter au panier
+                Commander
               </button>
             </div>
           </div>
@@ -1960,7 +1984,7 @@ const VinylSkateShop = () => {
             <span className="text-xs text-gray-400">Stock: {product.stock}</span>
           </div>
           
-          {/* Ligne 2 : Nom + Bouton Play */}
+          {/* Ligne 2 : Titre + Bouton Play */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <h3 className="text-white font-bold text-sm flex-1 truncate">{product.name}</h3>
             
@@ -2020,7 +2044,7 @@ const VinylSkateShop = () => {
                   : 'bg-yellow-500 hover:bg-yellow-600 text-black'
               }`}
             >
-              {product.stock === 0 ? 'Sold out' : 'Ajouter au panier'}
+              {product.stock === 0 ? 'Sold out' : 'Commander'}
             </button>
           </div>
         </div>
@@ -2260,7 +2284,7 @@ const VinylSkateShop = () => {
               <thead>
                 <tr className="bg-yellow-500 text-black font-bold">
                   <th className="py-3 px-3 text-center border-r border-yellow-600 w-12">#</th>
-                  <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[200px]">Nom</th>
+                  <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[200px]">Titre</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[120px]">Genre</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[120px]">Label</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[100px]">Style</th>
