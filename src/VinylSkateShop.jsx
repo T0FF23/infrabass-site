@@ -56,12 +56,12 @@ const VinylSkateShop = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [vinylBannerImage, setVinylBannerImage] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS.png');
-  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_jaune.png');
+  const [vinylBannerImage, setVinylBannerImage] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_800x200.png');
+  const [vinylBannerImageYellow, setVinylBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraBASS_VINYLS_jaune_800x200.png');
   const [vinylButtonImage, setVinylButtonImage] = useState('/infrabass-site/images/Tete_infrabass.png');
   const [vinylButtonImageYellow, setVinylButtonImageYellow] = useState('/infrabass-site/images/Tete_infrabass_survol-clic.png');
-  const [skateboardBannerImage, setSkateboardBannerImage] = useState('/infrabass-site/images/Bandeau_infraSK8.png');
-  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraSK8_SURVOL.png');
+  const [skateboardBannerImage, setSkateboardBannerImage] = useState('/infrabass-site/images/Bandeau_infraSK8_800x200.png');
+  const [skateboardBannerImageYellow, setSkateboardBannerImageYellow] = useState('/infrabass-site/images/Bandeau_infraSK8_SURVOL_800x200.png');
   const [skateboardButtonImage, setSkateboardButtonImage] = useState('/infrabass-site/images/Tete_elephant.png');
   const [skateboardButtonImageYellow, setSkateboardButtonImageYellow] = useState('/infrabass-site/images/Tete_elephant_SURVOL.png');
   const [username, setUsername] = useState('');
@@ -83,126 +83,19 @@ const VinylSkateShop = () => {
     cardExpiry: '',
     cardCVV: ''
   });
-  const [products, setProducts] = useState({
-    vinyls: [
-      {
-        id: 1,
-        name: "Daft Punk - Random Access Memories",
-        price: 35.99,
-        stock: 25,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Columbia",
-        format: "2xLP",
-        country: "France",
-        released: "2013",
-        style: "Disco, Synth-pop",
-        audioUrl: "",
-        audioUrl2: ""
-      },
-      {
-        id: 2,
-        name: "Aphex Twin - Selected Ambient Works 85-92",
-        price: 29.99,
-        stock: 15,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Apollo",
-        format: "2xLP",
-        country: "UK",
-        released: "1992",
-        style: "Ambient, IDM",
-        audioUrl: "",
-        audioUrl2: ""
-      },
-      {
-        id: 3,
-        name: "Burial - Untrue",
-        price: 27.50,
-        stock: 8,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Hyperdub",
-        format: "2xLP",
-        country: "UK",
-        released: "2007",
-        style: "Dubstep, UK Garage",
-        audioUrl: "",
-        audioUrl2: ""
-      },
-      {
-        id: 4,
-        name: "Kraftwerk - Trans-Europe Express",
-        price: 32.00,
-        stock: 12,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Kling Klang",
-        format: "LP",
-        country: "Germany",
-        released: "1977",
-        style: "Electro, Synth-pop",
-        audioUrl: "",
-        audioUrl2: ""
-      },
-      {
-        id: 5,
-        name: "Boards of Canada - Music Has the Right to Children",
-        price: 31.00,
-        stock: 0,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Warp",
-        format: "2xLP",
-        country: "UK",
-        released: "1998",
-        style: "IDM, Ambient",
-        audioUrl: "",
-        audioUrl2: ""
-      },
-      {
-        id: 6,
-        name: "Massive Attack - Mezzanine",
-        price: 28.99,
-        stock: 18,
-        rating: 5,
-        category: 'vinyl',
-        image: '🎵',
-        image1: null,
-        image2: null,
-        genre: "Electronic",
-        label: "Virgin",
-        format: "2xLP",
-        country: "UK",
-        released: "1998",
-        style: "Trip Hop, Downtempo",
-        audioUrl: "",
-        audioUrl2: ""
-      }
-    ]
+  const [products, setProducts] = useState(() => {
+    // Charger les produits depuis localStorage ou tableau vide
+    const savedProducts = localStorage.getItem('infrabass_products');
+    if (savedProducts) {
+      return JSON.parse(savedProducts);
+    }
+    return { vinyls: [] };
   });
 
-  // Products managed in memory
+  // Sauvegarder les produits dans localStorage à chaque modification
+  React.useEffect(() => {
+    localStorage.setItem('infrabass_products', JSON.stringify(products));
+  }, [products]);
 
   const [editingProduct, setEditingProduct] = useState(null);
   const [isProductValidated, setIsProductValidated] = useState(false);
@@ -211,6 +104,21 @@ const VinylSkateShop = () => {
   const vinylProducts = products.vinyls;
 
   const addToCart = (product) => {
+    // Vérifier si le stock est disponible
+    const currentProduct = products.vinyls.find(p => p.id === product.id);
+    if (!currentProduct || currentProduct.stock <= 0) {
+      return; // Pas de stock disponible
+    }
+    
+    // Décompter du stock
+    setProducts({
+      ...products,
+      vinyls: products.vinyls.map(p => 
+        p.id === product.id ? {...p, stock: p.stock - 1} : p
+      )
+    });
+    
+    // Ajouter au panier
     const existing = cart.find(item => item.id === product.id);
     if (existing) {
       setCart(cart.map(item => 
@@ -230,13 +138,47 @@ const VinylSkateShop = () => {
   };
 
   const removeFromCart = (id) => {
+    // Trouver l'item dans le panier pour connaître la quantité
+    const item = cart.find(item => item.id === id);
+    if (item) {
+      // Restituer le stock
+      setProducts({
+        ...products,
+        vinyls: products.vinyls.map(p => 
+          p.id === id ? {...p, stock: p.stock + item.qty} : p
+        )
+      });
+    }
+    // Retirer du panier
     setCart(cart.filter(item => item.id !== id));
   };
 
   const updateQuantity = (id, newQty) => {
+    const item = cart.find(item => item.id === id);
+    if (!item) return;
+    
+    const diff = newQty - item.qty; // positif = on ajoute, négatif = on retire
+    
     if (newQty === 0) {
       removeFromCart(id);
     } else {
+      // Vérifier le stock si on augmente la quantité
+      if (diff > 0) {
+        const currentProduct = products.vinyls.find(p => p.id === id);
+        if (!currentProduct || currentProduct.stock < diff) {
+          return; // Pas assez de stock
+        }
+      }
+      
+      // Mettre à jour le stock
+      setProducts({
+        ...products,
+        vinyls: products.vinyls.map(p => 
+          p.id === id ? {...p, stock: p.stock - diff} : p
+        )
+      });
+      
+      // Mettre à jour la quantité dans le panier
       setCart(cart.map(item => 
         item.id === id ? {...item, qty: newQty} : item
       ));
@@ -1800,24 +1742,32 @@ const VinylSkateShop = () => {
             {/* Prix et Bouton */}
             <div className="flex items-center gap-4">
               <span className="text-yellow-400 font-bold text-lg">{product.price}€</span>
-              <div className="flex gap-0.5">
-                {[...Array(50)].map((_, i) => {
-                  const ledsLit = Math.ceil((product.stock / 500) * 50);
-                  let colorClass;
-                  if (i < ledsLit) {
-                    if (product.stock >= 250) colorClass = 'bg-green-500';
-                    else if (product.stock > 100) colorClass = 'bg-orange-500';
-                    else colorClass = 'bg-red-500';
-                  } else {
-                    colorClass = 'bg-gray-700';
-                  }
-                  return <div key={i} className={`w-0.5 h-3 rounded-sm ${colorClass} transition-colors duration-300`} />;
-                })}
-              </div>
+              
+              {/* Bouton Play en mode liste - juste l'icône triangle */}
+              {(product.audioUrl || product.audioUrl2) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const url = product.audioUrl || product.audioUrl2;
+                    if (url) {
+                      window.open(url, '_blank');
+                    }
+                  }}
+                  className="flex items-center justify-center p-1"
+                  title="Écouter sur YouTube"
+                  style={{ transition: 'transform 0.2s' }}
+                  onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.3)'}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+                    <polygon points="3,1 13,8 3,15" />
+                  </svg>
+                </button>
+              )}
+              
               <button
                 onClick={() => {
-                  setCart([...cart, product]);
-                  console.log('ℹ️', 'Produit ajouté au panier !');
+                  addToCart(product);
                 }}
                 className="ml-auto px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition"
               >
@@ -1991,68 +1941,7 @@ const VinylSkateShop = () => {
       <div className="bg-neutral-950 backdrop-blur-sm rounded-xl overflow-hidden hover:border-yellow-500 transition-all hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/50">
         <div className="relative bg-gray-800 flex items-center justify-center text-6xl overflow-hidden" style={{height: '100px'}}>
           {product.image1 ? (
-            <>
-              <img src={product.image1} alt={product.name} className="w-full h-full object-cover opacity-60" />
-              <div className="absolute inset-0 flex justify-end items-center gap-1 p-1">
-                {product.image1 && product.audioUrl && (
-                  <button 
-                    onClick={handleVignette1Click}
-                    className="relative w-20 h-20 rounded overflow-hidden border border-yellow-500 hover:border-yellow-400 shadow-lg transition group"
-                  >
-                    <img 
-                      src={product.image1} 
-                      alt="Face A" 
-                      className="w-full h-full object-cover" 
-                    />
-                    <div className={`absolute inset-0 flex flex-col items-center justify-center transition ${playing1 ? 'bg-black/70' : 'bg-black/50 opacity-0 group-hover:opacity-100'}`}>
-                      <span className="text-white font-bold text-2xl mb-1">A</span>
-                      {playing1 ? (
-                        <div className="w-6 h-6 flex items-center justify-center">
-                          <div className="flex gap-1">
-                            <div className="w-1.5 h-4 bg-yellow-400"></div>
-                            <div className="w-1.5 h-4 bg-yellow-400"></div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-0 h-0 border-l-8 border-l-yellow-400 border-y-6 border-y-transparent"></div>
-                      )}
-                    </div>
-                  </button>
-                )}
-                {product.image2 && product.audioUrl2 && (
-                  <button 
-                    onClick={handleVignette2Click}
-                    className="relative w-20 h-20 rounded overflow-hidden border border-yellow-500 hover:border-yellow-400 shadow-lg transition group"
-                  >
-                    <img 
-                      src={product.image2} 
-                      alt="Face B" 
-                      className="w-full h-full object-cover" 
-                    />
-                    <div className={`absolute inset-0 flex flex-col items-center justify-center transition ${playing2 ? 'bg-black/70' : 'bg-black/50 opacity-0 group-hover:opacity-100'}`}>
-                      <span className="text-white font-bold text-2xl mb-1">B</span>
-                      {playing2 ? (
-                        <div className="w-6 h-6 flex items-center justify-center">
-                          <div className="flex gap-1">
-                            <div className="w-1.5 h-4 bg-yellow-400"></div>
-                            <div className="w-1.5 h-4 bg-yellow-400"></div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="w-0 h-0 border-l-8 border-l-yellow-400 border-y-6 border-y-transparent"></div>
-                      )}
-                    </div>
-                  </button>
-                )}
-              </div>
-              {/* Lecteurs YouTube cachés */}
-              {product.audioUrl && (
-                <div id={`player-${product.id}-1`} className="hidden"></div>
-              )}
-              {product.audioUrl2 && (
-                <div id={`player-${product.id}-2`} className="hidden"></div>
-              )}
-            </>
+            <img src={product.image1} alt={product.name} className="w-full h-full object-cover" />
           ) : (
             <div className="text-6xl">{product.image}</div>
           )}
@@ -2065,36 +1954,37 @@ const VinylSkateShop = () => {
         </div>
         
         <div className="p-2">
-          {/* Ligne 1 : Genre + Stock/500 */}
+          {/* Ligne 1 : Genre + Stock */}
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-gray-400">{product.genre || product.type}</p>
-            <span className="text-xs text-gray-400">Stock: {product.stock}/500</span>
+            <span className="text-xs text-gray-400">Stock: {product.stock}</span>
           </div>
           
-          {/* Ligne 2 : Nom + Jauge */}
+          {/* Ligne 2 : Nom + Bouton Play */}
           <div className="flex items-center justify-between gap-2 mb-1">
             <h3 className="text-white font-bold text-sm flex-1 truncate">{product.name}</h3>
             
-            {/* Jauge de stock avec LED */}
-            <div className="flex gap-0.5 flex-shrink-0">
-              {[...Array(50)].map((_, i) => {
-                const ledsLit = Math.ceil((product.stock / 500) * 50);
-                let colorClass;
-                if (i < ledsLit) {
-                  if (product.stock >= 250) colorClass = 'bg-green-500';
-                  else if (product.stock > 100) colorClass = 'bg-orange-500';
-                  else colorClass = 'bg-red-500';
-                } else {
-                  colorClass = 'bg-gray-700';
-                }
-                return (
-                  <div
-                    key={i}
-                    className={`w-0.5 h-4 rounded-sm ${colorClass} transition-colors duration-300`}
-                  />
-                );
-              })}
-            </div>
+            {/* Bouton Play - juste l'icône triangle */}
+            {(product.audioUrl || product.audioUrl2) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = product.audioUrl || product.audioUrl2;
+                  if (url) {
+                    window.open(url, '_blank');
+                  }
+                }}
+                className="flex items-center justify-center p-1"
+                title="Écouter sur YouTube"
+                style={{ transition: 'transform 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.3)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="white">
+                  <polygon points="3,1 13,8 3,15" />
+                </svg>
+              </button>
+            )}
           </div>
           
           {/* Ligne d'infos supplémentaires */}
@@ -2138,7 +2028,6 @@ const VinylSkateShop = () => {
     );
   };
 
-
   const HomePage = () => (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
@@ -2151,144 +2040,151 @@ const VinylSkateShop = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-8 mb-16">
-        {/* Bandeau Vinyls */}
+        {/* BANDEAU VINYLS - 800x200 */}
         <div 
-          className="group relative overflow-hidden rounded-2xl h-[280px] bg-gradient-to-br from-gray-900 to-black"
-          style={{ width: '800px', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto' }}
+          className="group relative overflow-hidden rounded-2xl"
+          style={{ width: '800px', height: '200px', marginLeft: 'auto', marginRight: 'auto', backgroundColor: '#1a1a1a' }}
         >
-          {/* Image de fond blanche (normale) */}
-          <img 
-            src={vinylBannerImage} 
-            alt="Vinyls background" 
-            className="vinyl-banner-white absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-            style={{ mixBlendMode: 'screen', opacity: 1 }}
-          />
+          {/* Image de fond blanche */}
+          {vinylBannerImage && (
+            <img 
+              src={vinylBannerImage} 
+              alt="Vinyls background" 
+              className="banner-white absolute inset-0 w-full h-full transition-opacity duration-300"
+              style={{ mixBlendMode: 'screen', opacity: 1, objectFit: 'fill' }}
+            />
+          )}
           {/* Image de fond jaune (survol) */}
-          <img 
-            src={vinylBannerImageYellow} 
-            alt="Vinyls background yellow" 
-            className="vinyl-banner-yellow absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-            style={{ mixBlendMode: 'screen', opacity: 0 }}
-          />
+          {vinylBannerImageYellow && (
+            <img 
+              src={vinylBannerImageYellow} 
+              alt="Vinyls background yellow" 
+              className="banner-yellow absolute inset-0 w-full h-full transition-opacity duration-300"
+              style={{ mixBlendMode: 'screen', opacity: 0, objectFit: 'fill' }}
+            />
+          )}
           
-          {/* Bouton central */}
-          <div className="relative flex items-center justify-center h-full">
+          {/* Bouton central 200x200 */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <div 
               onClick={() => setCurrentPage('vinyl')}
-              className="w-48 h-48 flex items-center justify-center cursor-pointer relative"
+              className="flex items-center justify-center cursor-pointer relative"
+              style={{ width: '200px', height: '200px' }}
               onMouseEnter={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
-                const bannerYellow = document.querySelector('.vinyl-banner-yellow');
-                const bannerWhite = document.querySelector('.vinyl-banner-white');
-                if (yellowBtn) { yellowBtn.style.opacity = '1'; yellowBtn.style.transform = 'scale(0.9)'; }
-                if (whiteBtn) { whiteBtn.style.opacity = '0'; whiteBtn.style.transform = 'scale(0.9)'; }
+                const yellowImg = e.currentTarget.querySelector('.white-version');
+                const whiteImg = e.currentTarget.querySelector('.yellow-version');
+                const bannerYellow = document.querySelector('.banner-yellow');
+                const bannerWhite = document.querySelector('.banner-white');
+                if (yellowImg) { yellowImg.style.opacity = '0'; yellowImg.style.transform = 'scale(0.9)'; }
+                if (whiteImg) { whiteImg.style.opacity = '1'; whiteImg.style.transform = 'scale(0.9)'; }
                 if (bannerYellow) bannerYellow.style.opacity = '1';
                 if (bannerWhite) bannerWhite.style.opacity = '0';
               }}
               onMouseLeave={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
-                const bannerYellow = document.querySelector('.vinyl-banner-yellow');
-                const bannerWhite = document.querySelector('.vinyl-banner-white');
-                if (yellowBtn) { yellowBtn.style.opacity = '0'; yellowBtn.style.transform = 'scale(1)'; }
-                if (whiteBtn) { whiteBtn.style.opacity = '1'; whiteBtn.style.transform = 'scale(1)'; }
+                const yellowImg = e.currentTarget.querySelector('.white-version');
+                const whiteImg = e.currentTarget.querySelector('.yellow-version');
+                const bannerYellow = document.querySelector('.banner-yellow');
+                const bannerWhite = document.querySelector('.banner-white');
+                if (yellowImg) { yellowImg.style.opacity = '1'; yellowImg.style.transform = 'scale(1)'; }
+                if (whiteImg) { whiteImg.style.opacity = '0'; whiteImg.style.transform = 'scale(1)'; }
                 if (bannerYellow) bannerYellow.style.opacity = '0';
                 if (bannerWhite) bannerWhite.style.opacity = '1';
               }}
-              onMouseDown={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.vinyl-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.vinyl-btn-white');
-                if (yellowBtn) yellowBtn.style.transform = 'scale(1)';
-                if (whiteBtn) whiteBtn.style.transform = 'scale(1)';
-              }}
             >
-              <img 
-                src={vinylButtonImage} 
-                alt="Vinyl button" 
-                className="vinyl-btn-white w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                style={{ mixBlendMode: 'screen', opacity: 1 }}
-              />
-              <img 
-                src={vinylButtonImageYellow} 
-                alt="Vinyl button yellow" 
-                className="vinyl-btn-yellow w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                style={{ mixBlendMode: 'screen', opacity: 0, transform: 'scale(1)' }}
-              />
+              {vinylButtonImage && (
+                <img 
+                  src={vinylButtonImage} 
+                  alt="Vinyl button" 
+                  className="white-version w-full h-full object-contain absolute inset-0 transition-all duration-300"
+                  style={{ mixBlendMode: 'screen', opacity: 1 }}
+                />
+              )}
+              {vinylButtonImageYellow && (
+                <img 
+                  src={vinylButtonImageYellow} 
+                  alt="Vinyl button yellow" 
+                  className="yellow-version w-full h-full object-contain absolute inset-0 transition-all duration-300"
+                  style={{ mixBlendMode: 'screen', opacity: 0 }}
+                />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Bandeau Skateboards */}
+        {/* BANDEAU SKATEBOARDS - 800x200 */}
         <div 
-          className="group relative overflow-hidden rounded-2xl h-[240px] bg-gradient-to-br from-gray-900 to-black"
-          style={{ width: '800px', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto' }}
+          className="group relative overflow-hidden rounded-2xl"
+          style={{ width: '800px', height: '200px', marginLeft: 'auto', marginRight: 'auto', backgroundColor: '#1a1a1a' }}
         >
-          {/* Image de fond blanche (normale) */}
-          <img 
-            src={skateboardBannerImage} 
-            alt="Skateboards background" 
-            className="sk8-banner-white absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-            style={{ mixBlendMode: 'screen', opacity: 1 }}
-          />
+          {/* Image de fond blanche */}
+          {skateboardBannerImage && (
+            <img 
+              src={skateboardBannerImage} 
+              alt="Skateboards background" 
+              className="banner-white-sk absolute inset-0 w-full h-full transition-opacity duration-300"
+              style={{ mixBlendMode: 'screen', opacity: 1, objectFit: 'fill' }}
+            />
+          )}
           {/* Image de fond jaune (survol) */}
-          <img 
-            src={skateboardBannerImageYellow} 
-            alt="Skateboards background yellow" 
-            className="sk8-banner-yellow absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
-            style={{ mixBlendMode: 'screen', opacity: 0 }}
-          />
+          {skateboardBannerImageYellow && (
+            <img 
+              src={skateboardBannerImageYellow} 
+              alt="Skateboards background yellow" 
+              className="banner-yellow-sk absolute inset-0 w-full h-full transition-opacity duration-300"
+              style={{ mixBlendMode: 'screen', opacity: 0, objectFit: 'fill' }}
+            />
+          )}
           
-          {/* Bouton central */}
-          <div className="relative flex items-center justify-center h-full">
+          {/* Bouton central 200x200 */}
+          <div className="absolute inset-0 flex items-center justify-center">
             <div 
               onClick={() => window.open('https://infrask8.webflow.io/', '_blank')}
-              className="w-64 h-64 flex items-center justify-center cursor-pointer relative"
+              className="flex items-center justify-center cursor-pointer relative"
+              style={{ width: '200px', height: '200px' }}
               onMouseEnter={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
-                const bannerYellow = document.querySelector('.sk8-banner-yellow');
-                const bannerWhite = document.querySelector('.sk8-banner-white');
-                if (yellowBtn) { yellowBtn.style.opacity = '1'; yellowBtn.style.transform = 'scale(0.9)'; }
-                if (whiteBtn) { whiteBtn.style.opacity = '0'; whiteBtn.style.transform = 'scale(0.9)'; }
+                const yellowImg = e.currentTarget.querySelector('.white-version-sk');
+                const whiteImg = e.currentTarget.querySelector('.yellow-version-sk');
+                const bannerYellow = document.querySelector('.banner-yellow-sk');
+                const bannerWhite = document.querySelector('.banner-white-sk');
+                if (yellowImg) { yellowImg.style.opacity = '0'; yellowImg.style.transform = 'scale(0.9)'; }
+                if (whiteImg) { whiteImg.style.opacity = '1'; whiteImg.style.transform = 'scale(0.9)'; }
                 if (bannerYellow) bannerYellow.style.opacity = '1';
                 if (bannerWhite) bannerWhite.style.opacity = '0';
               }}
               onMouseLeave={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
-                const bannerYellow = document.querySelector('.sk8-banner-yellow');
-                const bannerWhite = document.querySelector('.sk8-banner-white');
-                if (yellowBtn) { yellowBtn.style.opacity = '0'; yellowBtn.style.transform = 'scale(1)'; }
-                if (whiteBtn) { whiteBtn.style.opacity = '1'; whiteBtn.style.transform = 'scale(1)'; }
+                const yellowImg = e.currentTarget.querySelector('.white-version-sk');
+                const whiteImg = e.currentTarget.querySelector('.yellow-version-sk');
+                const bannerYellow = document.querySelector('.banner-yellow-sk');
+                const bannerWhite = document.querySelector('.banner-white-sk');
+                if (yellowImg) { yellowImg.style.opacity = '1'; yellowImg.style.transform = 'scale(1)'; }
+                if (whiteImg) { whiteImg.style.opacity = '0'; whiteImg.style.transform = 'scale(1)'; }
                 if (bannerYellow) bannerYellow.style.opacity = '0';
                 if (bannerWhite) bannerWhite.style.opacity = '1';
               }}
-              onMouseDown={(e) => {
-                const yellowBtn = e.currentTarget.querySelector('.sk8-btn-yellow');
-                const whiteBtn = e.currentTarget.querySelector('.sk8-btn-white');
-                if (yellowBtn) yellowBtn.style.transform = 'scale(1)';
-                if (whiteBtn) whiteBtn.style.transform = 'scale(1)';
-              }}
             >
-              <img 
-                src={skateboardButtonImage} 
-                alt="Skateboard button" 
-                className="sk8-btn-white w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                style={{ mixBlendMode: 'screen', opacity: 1 }}
-              />
-              <img 
-                src={skateboardButtonImageYellow} 
-                alt="Skateboard button yellow" 
-                className="sk8-btn-yellow w-full h-full object-contain transition-all duration-300 absolute inset-0"
-                style={{ mixBlendMode: 'screen', opacity: 0, transform: 'scale(1)' }}
-              />
+              {skateboardButtonImage && (
+                <img 
+                  src={skateboardButtonImage} 
+                  alt="Skateboard button" 
+                  className="white-version-sk w-full h-full object-contain absolute inset-0 transition-all duration-300"
+                  style={{ mixBlendMode: 'screen', opacity: 1 }}
+                />
+              )}
+              {skateboardButtonImageYellow && (
+                <img 
+                  src={skateboardButtonImageYellow} 
+                  alt="Skateboard button yellow" 
+                  className="yellow-version-sk w-full h-full object-contain absolute inset-0 transition-all duration-300"
+                  style={{ mixBlendMode: 'screen', opacity: 0 }}
+                />
+              )}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+
   const VinylPage = () => (
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-8">
