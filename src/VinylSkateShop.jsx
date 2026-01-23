@@ -2,10 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Menu, X, Heart, Star, Music, Zap, Home, User, Grid, List } from 'lucide-react';
 
 const VinylSkateShop = () => {
-  // Ajouter le style pour cacher TOUTES les scrollbars
+  const [fontLoaded, setFontLoaded] = useState(false);
+  
+  // Ajouter le style pour cacher TOUTES les scrollbars + fonte Rez
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
+      @font-face {
+        font-family: 'Rez';
+        src: url('./fonts/rez-regular.woff2') format('woff2'),
+             url('./fonts/rez-regular.woff') format('woff'),
+             url('./fonts/rez-regular.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: block;
+      }
+      .font-rez {
+        font-family: 'Rez', sans-serif;
+      }
       * {
         scrollbar-width: none !important;
         -ms-overflow-style: none !important;
@@ -17,6 +31,19 @@ const VinylSkateShop = () => {
       }
     `;
     document.head.appendChild(style);
+    
+    // Charger la fonte et mettre à jour l'état
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('1em Rez').then(() => {
+        setFontLoaded(true);
+      }).catch(() => {
+        setFontLoaded(true); // Afficher quand même si erreur
+      });
+    } else {
+      // Fallback pour navigateurs sans API FontFace
+      setTimeout(() => setFontLoaded(true), 100);
+    }
+    
     return () => document.head.removeChild(style);
   }, []);
 
@@ -56,7 +83,7 @@ const VinylSkateShop = () => {
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [currentPage, setCurrentPage] = useState('home');
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminTab, setAdminTab] = useState('add_ref'); // Onglet actif: 'gfx_ui', 'add_ref', 'medias', 'edit_ref'
+  const [adminTab, setAdminTab] = useState('add_ref'); // Onglet actif: 'gfx_ui', 'add_ref', 'contact_info', 'edit_ref'
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(true); // Pour le bouton de validation
   const [deleteConfirmId, setDeleteConfirmId] = useState(null); // Pour la confirmation de suppression
   const [vinylBannerImage, setVinylBannerImage] = useState(() => localStorage.getItem('vinylBannerImage') || '/infrabass-site/images/Bandeau_infraBASS_VINYLS_800x200.png');
@@ -76,6 +103,15 @@ const VinylSkateShop = () => {
   const [productType, setProductType] = useState('');
   const [productCategory, setProductCategory] = useState('vinyl');
   const [productAudioUrl, setProductAudioUrl] = useState('');
+  
+  // States pour Contact/Info
+  const [contactInfo, setContactInfo] = useState(() => localStorage.getItem('contactInfo') || '');
+  const [contactMessage, setContactMessage] = useState(() => localStorage.getItem('contactMessage') || '');
+  const [aboutUs, setAboutUs] = useState(() => localStorage.getItem('aboutUs') || '');
+  const [deliveryInfo, setDeliveryInfo] = useState(() => localStorage.getItem('deliveryInfo') || '');
+  const [returnsInfo, setReturnsInfo] = useState(() => localStorage.getItem('returnsInfo') || '');
+  const [paymentInfo, setPaymentInfo] = useState(() => localStorage.getItem('paymentInfo') || '');
+  
   const [paymentData, setPaymentData] = useState({
     name: '',
     email: '',
@@ -149,20 +185,66 @@ const VinylSkateShop = () => {
         released: '2023',
         style: 'Bass Music',
         type: 'IB-2K23-OP3'
+      },
+      {
+        id: 4,
+        name: 'Brice Edition',
+        price: 30.00,
+        stock: 25,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: '/infrabass-site/images/Brice-vinyl-final_by_toff_A_retouch_copie.png',
+        image2: null,
+        genre: 'Electronic',
+        audioUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        audioUrl2: '',
+        label: 'INFRABASS',
+        format: '12"',
+        country: 'France',
+        released: '2024',
+        style: 'Bass Music',
+        type: 'IB-BRICE-01'
+      },
+      {
+        id: 5,
+        name: 'IB 2K24 Preview',
+        price: 20.00,
+        stock: 100,
+        rating: 5,
+        category: 'vinyl',
+        image: '🎵',
+        image1: '/infrabass-site/images/blank_vinyl.png',
+        image2: null,
+        genre: 'Electronic',
+        audioUrl: '',
+        audioUrl2: '',
+        label: 'INFRABASS',
+        format: '12"',
+        country: 'France',
+        released: '2024',
+        style: 'Bass Music',
+        type: 'IB-2K24-PRE'
       }
     ]
   };
   
   const [products, setProducts] = useState(() => {
-    // Charger les références depuis localStorage ou utiliser les références par défaut
+    // Toujours utiliser les références par défaut
+    // Le localStorage sera utilisé pour les modifications ultérieures
     const savedProducts = localStorage.getItem('infrabass_products');
     if (savedProducts) {
-      const parsed = JSON.parse(savedProducts);
-      // Si le localStorage contient des vinyls, les utiliser, sinon utiliser les defaults
-      if (parsed.vinyls && parsed.vinyls.length > 0) {
-        return parsed;
+      try {
+        const parsed = JSON.parse(savedProducts);
+        // Si le localStorage contient des vinyls avec des données, les utiliser
+        if (parsed.vinyls && parsed.vinyls.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        console.log('Erreur parsing localStorage, utilisation des defaults');
       }
     }
+    // Sinon utiliser les références par défaut
     return defaultProducts;
   });
 
@@ -177,8 +259,23 @@ const VinylSkateShop = () => {
 
   const vinylProducts = products.vinyls;
 
-  const addToCart = (product) => {
-    // Vérifier si le stock est disponible
+  const addToCart = (product, selectedFormat = 'vinyl') => {
+    // Si format Digital, ne pas vérifier ni décompter le stock
+    if (selectedFormat === 'digital') {
+      // Ajouter au panier sans toucher au stock
+      const cartProduct = {...product, purchaseFormat: 'digital'};
+      const existing = cart.find(item => item.id === product.id && item.purchaseFormat === 'digital');
+      if (existing) {
+        setCart(cart.map(item => 
+          (item.id === product.id && item.purchaseFormat === 'digital') ? {...item, qty: item.qty + 1} : item
+        ));
+      } else {
+        setCart([...cart, {...cartProduct, qty: 1}]);
+      }
+      return;
+    }
+    
+    // Format Vinyl - Vérifier si le stock est disponible
     const currentProduct = products.vinyls.find(p => p.id === product.id);
     if (!currentProduct || currentProduct.stock <= 0) {
       return; // Pas de stock disponible
@@ -193,13 +290,14 @@ const VinylSkateShop = () => {
     });
     
     // Ajouter au panier
-    const existing = cart.find(item => item.id === product.id);
+    const cartProduct = {...product, purchaseFormat: 'vinyl'};
+    const existing = cart.find(item => item.id === product.id && item.purchaseFormat === 'vinyl');
     if (existing) {
       setCart(cart.map(item => 
-        item.id === product.id ? {...item, qty: item.qty + 1} : item
+        (item.id === product.id && item.purchaseFormat === 'vinyl') ? {...item, qty: item.qty + 1} : item
       ));
     } else {
-      setCart([...cart, {...product, qty: 1}]);
+      setCart([...cart, {...cartProduct, qty: 1}]);
     }
   };
 
@@ -211,50 +309,55 @@ const VinylSkateShop = () => {
     }
   };
 
-  const removeFromCart = (id) => {
+  const removeFromCart = (id, purchaseFormat = 'vinyl') => {
     // Trouver l'item dans le panier pour connaître la quantité
-    const item = cart.find(item => item.id === id);
+    const item = cart.find(item => item.id === id && item.purchaseFormat === purchaseFormat);
     if (item) {
-      // Restituer le stock
-      setProducts({
-        ...products,
-        vinyls: products.vinyls.map(p => 
-          p.id === id ? {...p, stock: p.stock + item.qty} : p
-        )
-      });
+      // Restituer le stock seulement si c'est un vinyl
+      if (purchaseFormat === 'vinyl') {
+        setProducts({
+          ...products,
+          vinyls: products.vinyls.map(p => 
+            p.id === id ? {...p, stock: p.stock + item.qty} : p
+          )
+        });
+      }
     }
     // Retirer du panier
-    setCart(cart.filter(item => item.id !== id));
+    setCart(cart.filter(item => !(item.id === id && item.purchaseFormat === purchaseFormat)));
   };
 
-  const updateQuantity = (id, newQty) => {
-    const item = cart.find(item => item.id === id);
+  const updateQuantity = (id, newQty, purchaseFormat = 'vinyl') => {
+    const item = cart.find(item => item.id === id && item.purchaseFormat === purchaseFormat);
     if (!item) return;
     
     const diff = newQty - item.qty; // positif = on ajoute, négatif = on retire
     
     if (newQty === 0) {
-      removeFromCart(id);
+      removeFromCart(id, purchaseFormat);
     } else {
-      // Vérifier le stock si on augmente la quantité
-      if (diff > 0) {
-        const currentProduct = products.vinyls.find(p => p.id === id);
-        if (!currentProduct || currentProduct.stock < diff) {
-          return; // Pas assez de stock
+      // Si c'est un vinyl, vérifier et mettre à jour le stock
+      if (purchaseFormat === 'vinyl') {
+        // Vérifier le stock si on augmente la quantité
+        if (diff > 0) {
+          const currentProduct = products.vinyls.find(p => p.id === id);
+          if (!currentProduct || currentProduct.stock < diff) {
+            return; // Pas assez de stock
+          }
         }
+        
+        // Mettre à jour le stock
+        setProducts({
+          ...products,
+          vinyls: products.vinyls.map(p => 
+            p.id === id ? {...p, stock: p.stock - diff} : p
+          )
+        });
       }
-      
-      // Mettre à jour le stock
-      setProducts({
-        ...products,
-        vinyls: products.vinyls.map(p => 
-          p.id === id ? {...p, stock: p.stock - diff} : p
-        )
-      });
       
       // Mettre à jour la quantité dans le panier
       setCart(cart.map(item => 
-        item.id === id ? {...item, qty: newQty} : item
+        (item.id === id && item.purchaseFormat === purchaseFormat) ? {...item, qty: newQty} : item
       ));
     }
   };
@@ -351,87 +454,137 @@ const VinylSkateShop = () => {
 
   const filteredVinyls = vinylProducts.filter(p => searchInProduct(p, searchTerm));
 
-  const ContactPage = () => (
-    <div className="max-w-4xl mx-auto px-4 py-12">
-      <h2 className="text-4xl font-bold text-white mb-8">Contactez-nous</h2>
-      
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
-          <h3 className="text-2xl font-bold text-white mb-4">Informations</h3>
-          <div className="space-y-4 text-gray-300">
-            <p><strong className="text-yellow-400">Email:</strong> contact@infrabass.com</p>
-            <p><strong className="text-yellow-400">Téléphone:</strong> +33 1 23 45 67 89</p>
-            <p><strong className="text-yellow-400">Adresse:</strong> 123 Rue de la Musique, 75001 Paris</p>
-            <p><strong className="text-yellow-400">Horaires:</strong> Lun-Sam 10h-19h</p>
-          </div>
-        </div>
+  const ContactPage = () => {
+    const [formName, setFormName] = useState('');
+    const [formEmail, setFormEmail] = useState('');
+    const [formMessage, setFormMessage] = useState('');
+    const [messageSent, setMessageSent] = useState(false);
 
-        <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
-          <h3 className="text-2xl font-bold text-white mb-4">Envoyez un message</h3>
-          <div className="space-y-4">
-            <input
-              type="text"
-              placeholder="Votre nom"
-              className="w-full px-4 py-2 bg-black/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
-            />
-            <input
-              type="email"
-              placeholder="Votre email"
-              className="w-full px-4 py-2 bg-black/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
-            />
-            <textarea
-              placeholder="Votre message"
-              rows="4"
-              className="w-full px-4 py-2 bg-black/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
-            ></textarea>
-            <button className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition">
-              Envoyer
-            </button>
+    const handleSendMessage = () => {
+      if (!formName || !formEmail || !formMessage) {
+        alert('Veuillez remplir tous les champs');
+        return;
+      }
+      
+      // Créer le lien mailto
+      const subject = encodeURIComponent(`Message de ${formName} via INFRABASS`);
+      const body = encodeURIComponent(`Nom: ${formName}\nEmail: ${formEmail}\n\nMessage:\n${formMessage}`);
+      const mailtoLink = `mailto:contact@infrabass.com?subject=${subject}&body=${body}`;
+      
+      // Ouvrir le client email
+      window.location.href = mailtoLink;
+      
+      // Afficher confirmation
+      setMessageSent(true);
+      setTimeout(() => {
+        setMessageSent(false);
+        setFormName('');
+        setFormEmail('');
+        setFormMessage('');
+      }, 3000);
+    };
+
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <h2 className="font-rez text-white mb-8" style={{ fontSize: '4.5rem', visibility: fontLoaded ? 'visible' : 'hidden' }}>Contact</h2>
+        
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
+            <h3 className="text-2xl font-bold text-white mb-4">Informations</h3>
+            <div className="space-y-4 text-gray-300">
+              {contactInfo ? (
+                <p className="whitespace-pre-wrap">{contactInfo}</p>
+              ) : (
+                <>
+                  <p><strong className="text-yellow-400">Email:</strong> contact@infrabass.com</p>
+                  <p><strong className="text-yellow-400">Téléphone:</strong> +33 1 23 45 67 89</p>
+                  <p><strong className="text-yellow-400">Adresse:</strong> 123 Rue de la Musique, 75001 Paris</p>
+                  <p><strong className="text-yellow-400">Horaires:</strong> Lun-Sam 10h-19h</p>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
+            <h3 className="text-2xl font-bold text-white mb-4">Envoyez un message</h3>
+            <div className="space-y-4">
+              <input
+                type="text"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder="Votre nom"
+                className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
+              />
+              <input
+                type="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                placeholder="Votre email"
+                className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
+              />
+              <textarea
+                value={formMessage}
+                onChange={(e) => setFormMessage(e.target.value)}
+                placeholder="Votre message"
+                rows="4"
+                className="w-full px-4 py-2 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-yellow-500"
+              ></textarea>
+              <button 
+                onClick={handleSendMessage}
+                className={`w-full py-3 font-bold rounded-lg transition ${
+                  messageSent 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-yellow-500 hover:bg-yellow-600 text-black'
+                }`}
+              >
+                {messageSent ? '✓ Message envoyé !' : 'Envoyer'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const InfoPage = () => (
     <div className="max-w-4xl mx-auto px-4 py-12">
-      <h2 className="text-4xl font-bold text-white mb-8">Informations</h2>
+      <h2 className="font-rez text-white mb-8" style={{ fontSize: '4.5rem', visibility: fontLoaded ? 'visible' : 'hidden' }}>Informations</h2>
       
       <div className="space-y-6">
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
           <h3 className="text-2xl font-bold text-white mb-4">À propos de nous</h3>
-          <p className="text-gray-300 leading-relaxed">
-            INFRABASS est né de la passion pour deux cultures iconiques : la musique vinyl et le skateboard. 
-            Depuis 2020, nous proposons une sélection pointue de disques vinyls collectors et de skateboards premium 
-            pour les passionnés et les connaisseurs.
+          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+            {aboutUs || `INFRABASS est né de la passion pour deux cultures iconiques : la musique vinyl et le skateboard. 
+Depuis 2020, nous proposons une sélection pointue de disques vinyls collectors et de skateboards premium 
+pour les passionnés et les connaisseurs.`}
           </p>
         </div>
 
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
           <h3 className="text-2xl font-bold text-white mb-4">Livraison</h3>
-          <p className="text-gray-300 leading-relaxed mb-2">
-            • Livraison gratuite dès 50€ d'achat<br/>
-            • Expédition sous 24-48h<br/>
-            • Suivi de colis en temps réel<br/>
-            • Emballage soigné et sécurisé
+          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+            {deliveryInfo || `• Livraison gratuite dès 50€ d'achat
+• Expédition sous 24-48h
+• Suivi de colis en temps réel
+• Emballage soigné et sécurisé`}
           </p>
         </div>
 
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
           <h3 className="text-2xl font-bold text-white mb-4">Retours et garanties</h3>
-          <p className="text-gray-300 leading-relaxed">
-            • 30 jours pour changer d'avis<br/>
-            • Garantie constructeur sur tous les skateboards<br/>
-            • Vinyls testés avant expédition<br/>
-            • Service client disponible 7j/7
+          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+            {returnsInfo || `• 30 jours pour changer d'avis
+• Garantie constructeur sur tous les skateboards
+• Vinyls testés avant expédition
+• Service client disponible 7j/7`}
           </p>
         </div>
 
         <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
           <h3 className="text-2xl font-bold text-white mb-4">Paiement sécurisé</h3>
-          <p className="text-gray-300 leading-relaxed">
-            Tous vos paiements sont sécurisés via SSL. Nous acceptons les cartes bancaires, 
-            PayPal et les virements bancaires.
+          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap">
+            {paymentInfo || `Tous vos paiements sont sécurisés via SSL. Nous acceptons les cartes bancaires, 
+PayPal et les virements bancaires.`}
           </p>
         </div>
       </div>
@@ -525,7 +678,17 @@ const VinylSkateShop = () => {
     const [localImage1, setLocalImage1] = useState(() => localStorage.getItem('productImage1') || '');
     const [localImage2, setLocalImage2] = useState(() => localStorage.getItem('productImage2') || '');
 
+    // États locaux pour Contact/Info
+    const [localContactInfo, setLocalContactInfo] = useState(() => localStorage.getItem('contactInfo') || '');
+    const [localContactMessage, setLocalContactMessage] = useState(() => localStorage.getItem('contactMessage') || '');
+    const [localAboutUs, setLocalAboutUs] = useState(() => localStorage.getItem('aboutUs') || '');
+    const [localDeliveryInfo, setLocalDeliveryInfo] = useState(() => localStorage.getItem('deliveryInfo') || '');
+    const [localReturnsInfo, setLocalReturnsInfo] = useState(() => localStorage.getItem('returnsInfo') || '');
+    const [localPaymentInfo, setLocalPaymentInfo] = useState(() => localStorage.getItem('paymentInfo') || '');
+    const [contactInfoModified, setContactInfoModified] = useState(false);
+
     // États locaux pour le formulaire de modification
+    const [editLocalType, setEditLocalType] = useState(() => localStorage.getItem('editProductType') || '');
     const [editLocalName, setEditLocalName] = useState(() => localStorage.getItem('editProductName') || '');
     const [editLocalLabel, setEditLocalLabel] = useState(() => localStorage.getItem('editProductLabel') || '');
     const [editLocalGenre, setEditLocalGenre] = useState(() => localStorage.getItem('editProductGenre') || '');
@@ -543,6 +706,7 @@ const VinylSkateShop = () => {
     // Charger les valeurs du produit en édition dans les états locaux
     React.useEffect(() => {
       if (editingProduct) {
+        setEditLocalType(editingProduct.type || '');
         setEditLocalName(editingProduct.name || '');
         setEditLocalLabel(editingProduct.label || '');
         setEditLocalGenre(editingProduct.genre || '');
@@ -620,7 +784,8 @@ const VinylSkateShop = () => {
         format: localFormat,
         country: localCountry,
         released: localReleased,
-        style: localStyle
+        style: localStyle,
+        type: localType
       };
 
       setProducts({
@@ -678,7 +843,25 @@ const VinylSkateShop = () => {
             <h2 className="text-4xl font-bold text-white">Administration</h2>
             <button
               onClick={() => {
+                // Sauvegarder les produits
                 localStorage.setItem('infrabass_products', JSON.stringify(products));
+                // Sauvegarder les infos Contact/Info
+                localStorage.setItem('contactInfo', contactInfo);
+                localStorage.setItem('contactMessage', contactMessage);
+                localStorage.setItem('aboutUs', aboutUs);
+                localStorage.setItem('deliveryInfo', deliveryInfo);
+                localStorage.setItem('returnsInfo', returnsInfo);
+                localStorage.setItem('paymentInfo', paymentInfo);
+                // Sauvegarder les images UI
+                localStorage.setItem('vinylBannerImage', vinylBannerImage);
+                localStorage.setItem('vinylBannerImageYellow', vinylBannerImageYellow);
+                localStorage.setItem('vinylButtonImage', vinylButtonImage);
+                localStorage.setItem('vinylButtonImageYellow', vinylButtonImageYellow);
+                localStorage.setItem('skateboardBannerImage', skateboardBannerImage);
+                localStorage.setItem('skateboardBannerImageYellow', skateboardBannerImageYellow);
+                localStorage.setItem('skateboardButtonImage', skateboardButtonImage);
+                localStorage.setItem('skateboardButtonImageYellow', skateboardButtonImageYellow);
+                
                 setHasUnsavedChanges(false);
                 alert('✅ Toutes les modifications ont été sauvegardées !');
               }}
@@ -707,16 +890,6 @@ const VinylSkateShop = () => {
                 Ajouter une référence
               </button>
               <button
-                onClick={() => setAdminTab('medias')}
-                className={`px-4 py-2 font-bold rounded-t-lg transition ${
-                  adminTab === 'medias' 
-                    ? 'bg-yellow-500 text-black' 
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Médias
-              </button>
-              <button
                 onClick={() => setAdminTab('edit_ref')}
                 className={`px-4 py-2 font-bold rounded-t-lg transition ${
                   adminTab === 'edit_ref' 
@@ -726,19 +899,41 @@ const VinylSkateShop = () => {
               >
                 Modifier une référence
               </button>
+              <button
+                onClick={() => setAdminTab('stat')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'stat' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Stat
+              </button>
             </div>
             
-            {/* Onglet GFX_UI isolé à droite */}
-            <button
-              onClick={() => setAdminTab('gfx_ui')}
-              className={`px-4 py-2 font-bold rounded-t-lg transition ${
-                adminTab === 'gfx_ui' 
-                  ? 'bg-yellow-500 text-black' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
-            >
-              GFX_UI
-            </button>
+            {/* Onglets Contact/Info et GFX_UI à droite */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAdminTab('contact_info')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'contact_info' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                Contact / Info
+              </button>
+              <button
+                onClick={() => setAdminTab('gfx_ui')}
+                className={`px-4 py-2 font-bold rounded-t-lg transition ${
+                  adminTab === 'gfx_ui' 
+                    ? 'bg-yellow-500 text-black' 
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                }`}
+              >
+                GFX_UI
+              </button>
+            </div>
           </div>
 
           {/* Contenu de l'admin selon l'onglet actif */}
@@ -1189,7 +1384,6 @@ const VinylSkateShop = () => {
                 onChange={(e) => {
                   setLocalType(e.target.value);
                   localStorage.setItem('productType', e.target.value);
-                  setHasUnsavedChanges(true);
                 }}
                 className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                 placeholder="Référence"
@@ -1294,51 +1488,13 @@ const VinylSkateShop = () => {
                 placeholder="10"
               />
             </div>
-            <div className="md:col-span-2 flex gap-3">
-              <button
-                onClick={handleAddProduct}
-                className={`flex-1 py-3 font-bold rounded-lg transition ${
-                  isProductAdded 
-                    ? 'bg-green-500 hover:bg-green-600 text-white' 
-                    : 'bg-red-500 hover:bg-red-600 text-white'
-                }`}
-              >
-                {isProductAdded ? '✓ Référence ajoutée' : 'Ajouter la référence'}
-              </button>
-              <button
-                onClick={() => {
-                  if (isProductAdded) {
-                    setIsProductValidated(true);
-                    // Réinitialiser après validation
-                    setTimeout(() => {
-                      setIsProductValidated(false);
-                      setIsProductAdded(false);
-                    }, 2000); // 2 secondes pour voir le message de validation
-                  }
-                }}
-                disabled={!isProductAdded}
-                className={`flex-1 py-3 font-bold rounded-lg transition ${
-                  isProductValidated 
-                    ? 'bg-green-500 hover:bg-green-600 text-white cursor-pointer' 
-                    : isProductAdded
-                      ? 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
-                      : 'bg-gray-500 text-gray-300 cursor-not-allowed'
-                }`}
-              >
-                {isProductValidated ? '✓ Validé' : 'Valider'}
-              </button>
-            </div>
           </div>
-        </div>
-          )}
-
-          {/* ONGLET MÉDIAS */}
-          {adminTab === 'medias' && (
-        <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6 mb-8">
-          <h3 className="text-2xl font-bold text-white mb-4">Médias</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Colonne 1 - URL Audio */}
-            <div className="space-y-4">
+          
+          {/* Bandeau Médias */}
+          <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6 mt-6">
+            <h3 className="text-2xl font-bold text-white mb-4">Médias</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {/* URL Audio */}
               <div>
                 <label className="block text-gray-300 text-sm mb-2">URL Audio</label>
                 <input
@@ -1347,24 +1503,12 @@ const VinylSkateShop = () => {
                   onChange={(e) => {
                     setLocalAudioUrl(e.target.value);
                     localStorage.setItem('productAudioUrl', e.target.value);
-                    setHasUnsavedChanges(true);
                   }}
-                  className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 mb-2"
+                  className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
-                <button
-                  onClick={() => {
-                    setLocalAudioUrl('');
-                    localStorage.removeItem('productAudioUrl');
-                  }}
-                  className="w-full py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
-                >
-                  Supprimer
-                </button>
               </div>
-            </div>
-            {/* Colonne 2 - Photo */}
-            <div className="space-y-4">
+              {/* Photo */}
               <div>
                 <label className="block text-gray-300 text-sm mb-2">Photo</label>
                 {localImage1 && (
@@ -1379,7 +1523,6 @@ const VinylSkateShop = () => {
                       accept="image/*"
                       onChange={(e) => {
                         handleImageUpload(e, 1);
-                        setHasUnsavedChanges(true);
                       }}
                       className="hidden"
                     />
@@ -1391,7 +1534,6 @@ const VinylSkateShop = () => {
                     onClick={() => {
                       setLocalImage1('');
                       localStorage.removeItem('productImage1');
-                      setHasUnsavedChanges(true);
                     }}
                     className="flex-1 py-2 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold rounded-lg transition"
                   >
@@ -1401,6 +1543,153 @@ const VinylSkateShop = () => {
               </div>
             </div>
           </div>
+          
+          {/* Boutons Ajouter et Valider - EN DESSOUS du bandeau Médias */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleAddProduct}
+              className={`flex-1 py-3 font-bold rounded-lg transition ${
+                isProductAdded 
+                  ? 'bg-green-500 hover:bg-green-600 text-white' 
+                  : 'bg-red-500 hover:bg-red-600 text-white'
+              }`}
+            >
+              {isProductAdded ? '✓ Référence ajoutée' : 'Ajouter la référence'}
+            </button>
+            <button
+              onClick={() => {
+                if (isProductAdded) {
+                  setIsProductValidated(true);
+                  // Réinitialiser après validation
+                  setTimeout(() => {
+                    setIsProductValidated(false);
+                    setIsProductAdded(false);
+                  }, 2000); // 2 secondes pour voir le message de validation
+                }
+              }}
+              disabled={!isProductAdded}
+              className={`flex-1 py-3 font-bold rounded-lg transition ${
+                isProductValidated 
+                  ? 'bg-green-500 hover:bg-green-600 text-white cursor-pointer' 
+                  : isProductAdded
+                    ? 'bg-red-500 hover:bg-red-600 text-white cursor-pointer'
+                    : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+              }`}
+            >
+              {isProductValidated ? '✓ Validé' : 'Valider'}
+            </button>
+          </div>
+        </div>
+          )}
+
+          {/* ONGLET CONTACT / INFO */}
+          {adminTab === 'contact_info' && (
+        <div className="space-y-6">
+          {/* Bandeau Contactez-nous */}
+          <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
+            <h3 className="text-2xl font-bold text-white mb-6">Contactez-nous</h3>
+            <div>
+              <label className="block text-gray-300 text-sm font-bold mb-2">Informations</label>
+              <textarea
+                value={localContactInfo}
+                onChange={(e) => {
+                  setLocalContactInfo(e.target.value);
+                  setContactInfoModified(true);
+                }}
+                style={{ minHeight: '120px', resize: 'vertical' }}
+                className="w-full px-4 py-3 bg-white text-black text-base rounded-lg border-2 border-gray-300 focus:border-yellow-500 focus:outline-none"
+                placeholder="Entrez vos informations de contact ici..."
+              />
+            </div>
+          </div>
+          
+          {/* Bandeau Informations */}
+          <div className="bg-neutral-950 backdrop-blur-sm rounded-xl p-6">
+            <h3 className="text-2xl font-bold text-white mb-6">Informations</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-gray-300 text-sm font-bold mb-2">À propos de nous</label>
+                <textarea
+                  value={localAboutUs}
+                  onChange={(e) => {
+                    setLocalAboutUs(e.target.value);
+                    setContactInfoModified(true);
+                  }}
+                  style={{ minHeight: '120px', resize: 'vertical' }}
+                  className="w-full px-4 py-3 bg-white text-black text-base rounded-lg border-2 border-gray-300 focus:border-yellow-500 focus:outline-none"
+                  placeholder="Décrivez votre entreprise ici..."
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-bold mb-2">Livraison</label>
+                <textarea
+                  value={localDeliveryInfo}
+                  onChange={(e) => {
+                    setLocalDeliveryInfo(e.target.value);
+                    setContactInfoModified(true);
+                  }}
+                  style={{ minHeight: '120px', resize: 'vertical' }}
+                  className="w-full px-4 py-3 bg-white text-black text-base rounded-lg border-2 border-gray-300 focus:border-yellow-500 focus:outline-none"
+                  placeholder="Informations sur la livraison..."
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-bold mb-2">Retours et garanties</label>
+                <textarea
+                  value={localReturnsInfo}
+                  onChange={(e) => {
+                    setLocalReturnsInfo(e.target.value);
+                    setContactInfoModified(true);
+                  }}
+                  style={{ minHeight: '120px', resize: 'vertical' }}
+                  className="w-full px-4 py-3 bg-white text-black text-base rounded-lg border-2 border-gray-300 focus:border-yellow-500 focus:outline-none"
+                  placeholder="Politique de retours et garanties..."
+                />
+              </div>
+              <div>
+                <label className="block text-gray-300 text-sm font-bold mb-2">Paiement sécurisé</label>
+                <textarea
+                  value={localPaymentInfo}
+                  onChange={(e) => {
+                    setLocalPaymentInfo(e.target.value);
+                    setContactInfoModified(true);
+                  }}
+                  style={{ minHeight: '120px', resize: 'vertical' }}
+                  className="w-full px-4 py-3 bg-white text-black text-base rounded-lg border-2 border-gray-300 focus:border-yellow-500 focus:outline-none"
+                  placeholder="Informations sur le paiement sécurisé..."
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Bouton Publier */}
+          <button
+            onClick={() => {
+              // Sauvegarder toutes les infos Contact/Info dans localStorage
+              localStorage.setItem('contactInfo', localContactInfo);
+              localStorage.setItem('contactMessage', localContactMessage);
+              localStorage.setItem('aboutUs', localAboutUs);
+              localStorage.setItem('deliveryInfo', localDeliveryInfo);
+              localStorage.setItem('returnsInfo', localReturnsInfo);
+              localStorage.setItem('paymentInfo', localPaymentInfo);
+              // Mettre à jour les states globaux pour que les pages Contact et Info se mettent à jour
+              setContactInfo(localContactInfo);
+              setContactMessage(localContactMessage);
+              setAboutUs(localAboutUs);
+              setDeliveryInfo(localDeliveryInfo);
+              setReturnsInfo(localReturnsInfo);
+              setPaymentInfo(localPaymentInfo);
+              setContactInfoModified(false);
+              alert('✅ Informations publiées avec succès ! Les pages Contact et Info ont été mises à jour.');
+            }}
+            className={`w-full py-4 text-white text-xl font-bold rounded-xl transition shadow-lg ${
+              contactInfoModified 
+                ? 'bg-red-600 hover:bg-red-700 active:bg-red-800' 
+                : 'bg-green-600 hover:bg-green-700 active:bg-green-800'
+            }`}
+          >
+            {contactInfoModified ? '📤 Publier les modifications' : '✓ Modifications enregistrées'}
+          </button>
         </div>
           )}
 
@@ -1480,8 +1769,8 @@ const VinylSkateShop = () => {
                   <label className="block text-gray-300 text-sm mb-2">Référence *</label>
                   <input
                     type="text"
-                    value={editingProduct.type || ''}
-                    onChange={(e) => setEditingProduct({...editingProduct, type: e.target.value})}
+                    value={editLocalType}
+                    onChange={(e) => setEditLocalType(e.target.value)}
                     className="w-full px-4 py-2 bg-white text-black rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     placeholder="Référence du produit"
                     required
@@ -1689,6 +1978,7 @@ const VinylSkateShop = () => {
                     onClick={() => {
                       const updatedProduct = {
                         ...editingProduct,
+                        type: editLocalType,
                         name: editLocalName,
                         label: editLocalLabel,
                         genre: editLocalGenre,
@@ -1722,6 +2012,202 @@ const VinylSkateShop = () => {
             </div>
           </div>
         )}
+
+          {/* ONGLET STAT */}
+          {adminTab === 'stat' && (
+            <div className="space-y-6">
+              {/* Résumé global */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-yellow-600 to-yellow-800 rounded-xl p-6 text-center">
+                  <p className="text-yellow-200 text-sm mb-1">Total Références</p>
+                  <p className="text-4xl font-bold text-white">{products.vinyls.length}</p>
+                </div>
+                <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6 text-center">
+                  <p className="text-green-200 text-sm mb-1">Stock Total</p>
+                  <p className="text-4xl font-bold text-white">{products.vinyls.reduce((sum, p) => sum + p.stock, 0)}</p>
+                </div>
+                <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6 text-center">
+                  <p className="text-blue-200 text-sm mb-1">Valeur Stock</p>
+                  <p className="text-4xl font-bold text-white">{products.vinyls.reduce((sum, p) => sum + (p.stock * p.price), 0).toFixed(0)}€</p>
+                </div>
+                <div className="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6 text-center">
+                  <p className="text-red-200 text-sm mb-1">Rupture de Stock</p>
+                  <p className="text-4xl font-bold text-white">{products.vinyls.filter(p => p.stock === 0).length}</p>
+                </div>
+              </div>
+
+              {/* Alertes Stock */}
+              <div className="bg-neutral-950 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-red-500">⚠️</span> Alertes Stock (≤ 5 unités)
+                </h3>
+                <div className="space-y-2">
+                  {products.vinyls.filter(p => p.stock <= 5).length === 0 ? (
+                    <p className="text-green-400">✓ Aucune alerte - Tous les stocks sont au-dessus de 5 unités</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-400 border-b border-gray-700">
+                          <th className="py-2 px-3">Réf</th>
+                          <th className="py-2 px-3">Titre</th>
+                          <th className="py-2 px-3">Artiste(s)</th>
+                          <th className="py-2 px-3 text-center">Stock</th>
+                          <th className="py-2 px-3 text-center">Statut</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {products.vinyls.filter(p => p.stock <= 5).sort((a, b) => a.stock - b.stock).map(product => (
+                          <tr key={product.id} className="border-b border-gray-800 hover:bg-gray-900">
+                            <td className="py-2 px-3 text-yellow-400 font-mono">{product.type || 'N/A'}</td>
+                            <td className="py-2 px-3 text-white font-semibold">{product.name}</td>
+                            <td className="py-2 px-3 text-gray-400">{product.genre || 'N/A'}</td>
+                            <td className="py-2 px-3 text-center">
+                              <span className={`px-2 py-1 rounded font-bold ${
+                                product.stock === 0 ? 'bg-red-600 text-white' : 'bg-orange-600 text-white'
+                              }`}>
+                                {product.stock}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-center">
+                              {product.stock === 0 ? (
+                                <span className="text-red-500 font-bold">RUPTURE</span>
+                              ) : (
+                                <span className="text-orange-400">Stock faible</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+
+              {/* Historique des commandes (panier actuel) */}
+              <div className="bg-neutral-950 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-blue-500">🛒</span> Panier Actuel
+                </h3>
+                {cart.length === 0 ? (
+                  <p className="text-gray-400">Aucun article dans le panier actuellement</p>
+                ) : (
+                  <>
+                    <table className="w-full text-sm mb-4">
+                      <thead>
+                        <tr className="text-left text-gray-400 border-b border-gray-700">
+                          <th className="py-2 px-3">Réf</th>
+                          <th className="py-2 px-3">Titre</th>
+                          <th className="py-2 px-3 text-center">Format</th>
+                          <th className="py-2 px-3 text-center">Qté</th>
+                          <th className="py-2 px-3 text-right">Prix Unit.</th>
+                          <th className="py-2 px-3 text-right">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cart.map(item => (
+                          <tr key={`${item.id}-${item.purchaseFormat}`} className="border-b border-gray-800">
+                            <td className="py-2 px-3 text-yellow-400 font-mono">{item.type || 'N/A'}</td>
+                            <td className="py-2 px-3 text-white">{item.name}</td>
+                            <td className="py-2 px-3 text-center">
+                              <span className={`px-2 py-1 rounded text-xs font-bold ${
+                                item.purchaseFormat === 'digital' ? 'bg-blue-500 text-white' : 'bg-yellow-500 text-black'
+                              }`}>
+                                {item.purchaseFormat === 'digital' ? 'Digital' : 'Vinyl'}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3 text-center text-white font-bold">{item.qty}</td>
+                            <td className="py-2 px-3 text-right text-gray-400">{item.price.toFixed(2)}€</td>
+                            <td className="py-2 px-3 text-right text-yellow-400 font-bold">{(item.price * item.qty).toFixed(2)}€</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="flex justify-between items-center pt-4 border-t border-yellow-500">
+                      <span className="text-white font-bold">Total Panier :</span>
+                      <span className="text-2xl text-yellow-400 font-bold">{cartTotal.toFixed(2)}€</span>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Inventaire complet */}
+              <div className="bg-neutral-950 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-yellow-500">📦</span> Inventaire Complet
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-yellow-500 text-black font-bold">
+                        <th className="py-2 px-3 text-left">Réf</th>
+                        <th className="py-2 px-3 text-left">Titre</th>
+                        <th className="py-2 px-3 text-left">Artiste(s)</th>
+                        <th className="py-2 px-3 text-left">Label</th>
+                        <th className="py-2 px-3 text-center">Format</th>
+                        <th className="py-2 px-3 text-center">Stock</th>
+                        <th className="py-2 px-3 text-right">Prix</th>
+                        <th className="py-2 px-3 text-right">Valeur</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.vinyls.map(product => (
+                        <tr key={product.id} className="border-b border-gray-800 hover:bg-gray-900">
+                          <td className="py-2 px-3 text-yellow-400 font-mono">{product.type || 'N/A'}</td>
+                          <td className="py-2 px-3 text-white font-semibold">{product.name}</td>
+                          <td className="py-2 px-3 text-gray-400">{product.genre || 'N/A'}</td>
+                          <td className="py-2 px-3 text-gray-400">{product.label || 'N/A'}</td>
+                          <td className="py-2 px-3 text-center text-gray-400">{product.format || 'N/A'}</td>
+                          <td className="py-2 px-3 text-center">
+                            <span className={`px-2 py-1 rounded font-bold ${
+                              product.stock === 0 ? 'bg-red-600 text-white' :
+                              product.stock <= 5 ? 'bg-orange-600 text-white' :
+                              'bg-green-600 text-white'
+                            }`}>
+                              {product.stock}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-right text-gray-400">{product.price.toFixed(2)}€</td>
+                          <td className="py-2 px-3 text-right text-yellow-400 font-bold">{(product.stock * product.price).toFixed(2)}€</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-gray-800 font-bold">
+                        <td colSpan="5" className="py-3 px-3 text-right text-white">TOTAUX :</td>
+                        <td className="py-3 px-3 text-center text-white">{products.vinyls.reduce((sum, p) => sum + p.stock, 0)}</td>
+                        <td className="py-3 px-3 text-right text-gray-400">-</td>
+                        <td className="py-3 px-3 text-right text-yellow-400">{products.vinyls.reduce((sum, p) => sum + (p.stock * p.price), 0).toFixed(2)}€</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Statistiques par Label */}
+              <div className="bg-neutral-950 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="text-purple-500">📊</span> Statistiques par Label
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[...new Set(products.vinyls.map(p => p.label).filter(Boolean))].map(label => {
+                    const labelProducts = products.vinyls.filter(p => p.label === label);
+                    const totalStock = labelProducts.reduce((sum, p) => sum + p.stock, 0);
+                    const totalValue = labelProducts.reduce((sum, p) => sum + (p.stock * p.price), 0);
+                    return (
+                      <div key={label} className="bg-gray-800 rounded-lg p-4">
+                        <h4 className="text-yellow-400 font-bold mb-2">{label}</h4>
+                        <div className="text-sm space-y-1">
+                          <p className="text-gray-400">Références : <span className="text-white font-bold">{labelProducts.length}</span></p>
+                          <p className="text-gray-400">Stock total : <span className="text-white font-bold">{totalStock}</span></p>
+                          <p className="text-gray-400">Valeur : <span className="text-yellow-400 font-bold">{totalValue.toFixed(2)}€</span></p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -1733,6 +2219,11 @@ const VinylSkateShop = () => {
     const player1Ref = React.useRef(null);
     const player2Ref = React.useRef(null);
     const [playersReady, setPlayersReady] = React.useState(false);
+    const [selectedFormat, setSelectedFormat] = React.useState('vinyl');
+
+    // Calculer si le bouton Commander doit être actif
+    const isCommandActive = selectedFormat === 'digital' || product.stock > 0;
+    const displayStock = selectedFormat === 'digital' ? '∞' : product.stock;
 
     // Si mode liste, retourner une vue horizontale
     if (listView) {
@@ -1789,13 +2280,32 @@ const VinylSkateShop = () => {
                 </button>
               )}
               
+              {/* Menu déroulant Vinyl/Digital */}
+              <select
+                value={selectedFormat}
+                onChange={(e) => setSelectedFormat(e.target.value)}
+                className="px-3 py-2 bg-gray-800 text-white border border-gray-600 rounded-lg focus:outline-none focus:border-yellow-500 cursor-pointer"
+              >
+                <option value="vinyl">Vinyl</option>
+                <option value="digital">Digital</option>
+              </select>
+              
               <button
                 onClick={() => {
-                  addToCart(product);
+                  if (isCommandActive) {
+                    addToCart({...product, format: selectedFormat}, selectedFormat);
+                  }
                 }}
-                className="ml-auto px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg transition"
+                disabled={!isCommandActive}
+                className={`ml-auto px-4 py-2 font-bold rounded-lg transition ${
+                  !isCommandActive
+                    ? 'bg-red-600 text-white cursor-not-allowed'
+                    : selectedFormat === 'digital'
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                      : 'bg-yellow-500 hover:bg-yellow-600 text-black'
+                }`}
               >
-                Commander
+                {isCommandActive ? 'Commander' : 'Sold out'}
               </button>
             </div>
           </div>
@@ -1978,10 +2488,9 @@ const VinylSkateShop = () => {
         </div>
         
         <div className="p-2">
-          {/* Ligne 1 : Genre + Stock */}
+          {/* Ligne 1 : Genre */}
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-gray-400">{product.genre || product.type}</p>
-            <span className="text-xs text-gray-400">Stock: {product.stock}</span>
           </div>
           
           {/* Ligne 2 : Titre + Bouton Play */}
@@ -2011,7 +2520,7 @@ const VinylSkateShop = () => {
             )}
           </div>
           
-          {/* Ligne d'infos supplémentaires */}
+          {/* Ligne d'infos supplémentaires - Sans Format en mode Mosaïque */}
           <div className="text-xs text-gray-500 mb-2 flex justify-between items-center flex-wrap gap-x-1 gap-y-0.5">
             <div className="flex gap-1">
               <span className="text-yellow-400 font-semibold">Label:</span>
@@ -2022,29 +2531,43 @@ const VinylSkateShop = () => {
               <span className={!product.style ? 'text-gray-600' : ''}>{product.style || 'N/A'}</span>
             </div>
             <div className="flex gap-1">
-              <span className="text-yellow-400 font-semibold">Format:</span>
-              <span className={!product.format ? 'text-gray-600' : ''}>{product.format || 'N/A'}</span>
-            </div>
-            <div className="flex gap-1">
               <span className="text-yellow-400 font-semibold">Pays:</span>
               <span className={!product.country ? 'text-gray-600' : ''}>{product.country || 'N/A'}</span>
             </div>
           </div>
 
+          {/* Prix */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-lg font-bold text-yellow-400">
               {product.price.toFixed(2)}€
             </span>
+            <span className="text-sm text-gray-400">
+              Stock: {displayStock}
+            </span>
+          </div>
+          
+          {/* Menu déroulant + Bouton Commander */}
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedFormat}
+              onChange={(e) => setSelectedFormat(e.target.value)}
+              className="flex-1 px-2 py-1.5 bg-gray-800 text-white text-sm border border-gray-600 rounded-lg focus:outline-none focus:border-yellow-500 cursor-pointer"
+            >
+              <option value="vinyl">Vinyl</option>
+              <option value="digital">Digital</option>
+            </select>
             <button 
-              onClick={() => product.stock > 0 && addToCart(product)}
-              disabled={product.stock === 0}
-              className={`px-3 py-1.5 font-bold text-sm rounded-lg transition ${
-                product.stock === 0 
+              onClick={() => isCommandActive && addToCart({...product, format: selectedFormat}, selectedFormat)}
+              disabled={!isCommandActive}
+              className={`flex-1 px-3 py-1.5 font-bold text-sm rounded-lg transition ${
+                !isCommandActive
                   ? 'bg-red-600 text-white cursor-not-allowed' 
-                  : 'bg-yellow-500 hover:bg-yellow-600 text-black'
+                  : selectedFormat === 'digital'
+                    ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                    : 'bg-yellow-500 hover:bg-yellow-600 text-black'
               }`}
             >
-              {product.stock === 0 ? 'Sold out' : 'Commander'}
+              {!isCommandActive ? 'Sold out' : 'Commander'}
             </button>
           </div>
         </div>
@@ -2055,8 +2578,17 @@ const VinylSkateShop = () => {
   const HomePage = () => (
     <div className="max-w-7xl mx-auto px-4 py-12">
       <div className="text-center mb-16">
-        <h2 className="text-6xl font-bold mb-2" style={{ color: 'rgb(255, 186, 0)' }}>
-          INFRABASS.ORG
+        <h2 
+          className="font-rez" 
+          style={{ 
+            color: 'rgb(255, 186, 0)', 
+            fontSize: '9rem', 
+            marginBottom: '-1rem',
+            lineHeight: '1',
+            visibility: fontLoaded ? 'visible' : 'hidden'
+          }}
+        >
+          INFRABASS
         </h2>
         <p className="text-2xl text-gray-300 mb-12">
           Vinyls & Skateboards Shop
@@ -2228,8 +2760,7 @@ const VinylSkateShop = () => {
               <circle cx="50" cy="50" r="4" fill="#1a1a1a"/>
             </svg>
             <div>
-              <h2 className="text-3xl font-bold text-white">Vinyls shop</h2>
-              <p className="text-gray-400 text-sm">Collection de disques vinyls authentiques</p>
+              <h2 className="font-rez text-white" style={{ fontSize: '4.5rem', visibility: fontLoaded ? 'visible' : 'hidden' }}>Vinyls shop</h2>
             </div>
           </div>
           
@@ -2284,8 +2815,10 @@ const VinylSkateShop = () => {
               <thead>
                 <tr className="bg-yellow-500 text-black font-bold">
                   <th className="py-3 px-3 text-center border-r border-yellow-600 w-12">#</th>
+                  <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[100px]">Réf</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[200px]">Titre</th>
-                  <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[120px]">Genre</th>
+                  <th className="py-3 px-3 text-center border-r border-yellow-600 w-16">Play</th>
+                  <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[120px]">Artiste(s)</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[120px]">Label</th>
                   <th className="py-3 px-3 text-left border-r border-yellow-600 min-w-[100px]">Style</th>
                   <th className="py-3 px-3 text-center border-r border-yellow-600 w-20">Format</th>
@@ -2303,7 +2836,26 @@ const VinylSkateShop = () => {
                     className="border-b border-gray-800 hover:bg-gray-900 transition"
                   >
                     <td className="py-3 px-3 text-center text-gray-500 font-mono border-r border-gray-700">{index + 1}</td>
+                    <td className="py-3 px-3 text-left text-yellow-400 font-mono border-r border-gray-700">{product.type || 'N/A'}</td>
                     <td className="py-3 px-3 text-left text-white font-semibold border-r border-gray-700">{product.name}</td>
+                    <td className="py-3 px-3 text-center border-r border-gray-700">
+                      {(product.audioUrl || product.audioUrl2) ? (
+                        <button
+                          onClick={() => {
+                            const url = product.audioUrl || product.audioUrl2;
+                            if (url) window.open(url, '_blank');
+                          }}
+                          className="w-8 h-8 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center mx-auto transition"
+                          title="Écouter sur YouTube"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="white">
+                            <polygon points="4,2 14,8 4,14" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <span className="text-gray-600">-</span>
+                      )}
+                    </td>
                     <td className="py-3 px-3 text-left text-gray-400 border-r border-gray-700">{product.genre || 'N/A'}</td>
                     <td className="py-3 px-3 text-left text-gray-400 border-r border-gray-700">{product.label || 'N/A'}</td>
                     <td className="py-3 px-3 text-left text-gray-400 border-r border-gray-700">{product.style || 'N/A'}</td>
@@ -2390,7 +2942,7 @@ const VinylSkateShop = () => {
                 <circle cx="50" cy="50" r="4" fill="#1a1a1a"/>
               </svg>
               <div>
-                <h1 className="text-2xl font-bold text-yellow-400">INFRABASS</h1>
+                <h1 className="font-rez text-yellow-400" style={{ fontSize: '2.25rem', lineHeight: '1', marginBottom: '-0.25rem', visibility: fontLoaded ? 'visible' : 'hidden' }}>INFRABASS</h1>
                 <p className="text-xs text-gray-400">Vinyls & Skateboards Shop</p>
               </div>
             </div>
@@ -2520,62 +3072,86 @@ const VinylSkateShop = () => {
       {currentPage === 'login' && <AdminLoginPage />}
       {currentPage === 'admin' && isAdmin && <AdminPage />}
 
-      {cartOpen && (
-        <>
-          <div 
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-            onClick={() => setCartOpen(false)}
-          ></div>
-          
-          <div className="fixed top-0 right-0 h-full w-full md:w-96 bg-neutral-950 border-l border-yellow-500 shadow-2xl shadow-yellow-500/50 z-50 overflow-y-auto">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-white font-bold text-2xl">Panier ({cartCount})</h3>
-                <button 
-                  onClick={() => setCartOpen(false)}
-                  className="text-gray-400 hover:text-white transition"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
+      {/* Volet panier latéral */}
+      <div 
+        className={`fixed top-0 right-0 h-full bg-neutral-950 border-l border-yellow-500 shadow-2xl shadow-yellow-500/50 z-50 overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+          cartOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ width: '438px' }}
+      >
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-bold text-lg">Panier ({cartCount})</h3>
+            <button 
+              onClick={() => setCartOpen(false)}
+              className="text-gray-400 hover:text-white transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-              {cart.length === 0 ? (
-                <div className="text-center py-12">
-                  <ShoppingCart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <p className="text-gray-400">Votre panier est vide</p>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-4 mb-6">
+          {cart.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">Votre panier est vide</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4 mb-6">
                     {cart.map(item => (
-                      <div key={item.id} className="bg-yellow-900/20 rounded-lg p-4">
+                      <div key={`${item.id}-${item.purchaseFormat}`} className={`rounded-lg p-4 ${
+                        item.purchaseFormat === 'digital' 
+                          ? 'bg-blue-900/20 border border-blue-500/30' 
+                          : 'bg-yellow-900/20 border border-yellow-500/30'
+                      }`}>
                         <div className="flex items-start gap-4">
-                          <div className="text-4xl">{item.image}</div>
+                          {item.image1 ? (
+                            <img src={item.image1} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
+                          ) : (
+                            <div className="text-4xl">{item.image}</div>
+                          )}
                           <div className="flex-1">
-                            <h4 className="text-white font-bold mb-1">{item.name}</h4>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="text-white font-bold">{item.name}</h4>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                item.purchaseFormat === 'digital'
+                                  ? 'bg-blue-500 text-white'
+                                  : 'bg-yellow-500 text-black'
+                              }`}>
+                                {item.purchaseFormat === 'digital' ? 'Digital' : 'Vinyl'}
+                              </span>
+                            </div>
                             <p className="text-sm text-gray-400 mb-2">{item.genre || item.type}</p>
-                            <p className="text-yellow-400 font-bold">{item.price.toFixed(2)}€</p>
+                            <p className={`font-bold ${item.purchaseFormat === 'digital' ? 'text-blue-400' : 'text-yellow-400'}`}>{item.price.toFixed(2)}€</p>
                           </div>
                         </div>
                         
                         <div className="flex items-center justify-between mt-4">
                           <div className="flex items-center gap-2">
                             <button 
-                              onClick={() => updateQuantity(item.id, item.qty - 1)}
-                              className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-black rounded flex items-center justify-center font-bold"
+                              onClick={() => updateQuantity(item.id, item.qty - 1, item.purchaseFormat)}
+                              className={`w-8 h-8 text-black rounded flex items-center justify-center font-bold ${
+                                item.purchaseFormat === 'digital'
+                                  ? 'bg-blue-500 hover:bg-blue-600'
+                                  : 'bg-yellow-500 hover:bg-yellow-600'
+                              }`}
                             >
                               -
                             </button>
                             <span className="text-white font-bold w-8 text-center">{item.qty}</span>
                             <button 
-                              onClick={() => updateQuantity(item.id, item.qty + 1)}
-                              className="w-8 h-8 bg-yellow-500 hover:bg-yellow-600 text-black rounded flex items-center justify-center font-bold"
+                              onClick={() => updateQuantity(item.id, item.qty + 1, item.purchaseFormat)}
+                              className={`w-8 h-8 text-black rounded flex items-center justify-center font-bold ${
+                                item.purchaseFormat === 'digital'
+                                  ? 'bg-blue-500 hover:bg-blue-600'
+                                  : 'bg-yellow-500 hover:bg-yellow-600'
+                              }`}
                             >
                               +
                             </button>
                           </div>
                           <button 
-                            onClick={() => removeFromCart(item.id)}
+                            onClick={() => removeFromCart(item.id, item.purchaseFormat)}
                             className="text-red-400 hover:text-red-300 text-sm font-bold"
                           >
                             Supprimer
@@ -2734,8 +3310,6 @@ const VinylSkateShop = () => {
               )}
             </div>
           </div>
-        </>
-      )}
     </div>
   );
 };
